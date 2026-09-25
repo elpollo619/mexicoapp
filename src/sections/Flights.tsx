@@ -2,11 +2,12 @@ import { useState } from 'react'
 import { Pencil, Plane, Plus } from 'lucide-react'
 import { AIRPORT_TZ, type Flight } from '../data/flights'
 import { CORE } from '../data/people'
-import { depEpoch, arrEpoch, hasTime, useFlights } from '../lib/flights'
+import { depEpoch, arrEpoch, hasTime, knownAirport, useFlights } from '../lib/flights'
 import { useMe } from '../lib/me'
 import { put, uid } from '../lib/store'
 import { countdown, longDate, useNow } from '../lib/time'
 import { Avatars, name, PeoplePicker, Sheet } from '../components/ui'
+import { toast } from '../lib/toast'
 
 export default function Flights() {
   const flights = useFlights()
@@ -68,7 +69,8 @@ function EditFlight({ flight, onClose }: { flight: Flight | null; onClose: () =>
 }
 
 function FlightForm({ flight, onClose }: { flight: Flight; onClose: () => void }) {
-  const [f, setF] = useState(flight)
+  const [f, setF] = useState({ ...flight, dep: flight.dep.slice(0, 16), arr: flight.arr.slice(0, 16) })
+  const validTimes = [f.dep, f.arr].every((v) => /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(v.slice(0, 16)))
   const set = <K extends keyof Flight>(k: K, v: Flight[K]) => setF({ ...f, [k]: v })
   const text = (k: 'from' | 'fromName' | 'to' | 'toName' | 'airline' | 'numbers' | 'notes' | 'bags' | 'price', label: string) => (
     <label className="field">
@@ -81,7 +83,9 @@ function FlightForm({ flight, onClose }: { flight: Flight; onClose: () => void }
       className="col"
       onSubmit={(e) => {
         e.preventDefault()
-        put('flight', f.id, f)
+        if (!validTimes) return
+        put('flight', f.id, { ...f, dep: f.dep.slice(0, 16), arr: f.arr.slice(0, 16) })
+        toast('Vuelo guardado para todos ✓')
         onClose()
       }}
     >
@@ -122,7 +126,13 @@ function FlightForm({ flight, onClose }: { flight: Flight; onClose: () => void }
           ⏳ Pendiente
         </button>
       </div>
-      <button className="btn block" type="submit" disabled={!f.from || !f.to}>
+      {[f.from, f.to].filter((c) => c.length === 3 && !knownAirport(c)).map((c) => (
+        <span key={c} className="warn">
+          No conozco la zona horaria de {c}: usaré la hora de CDMX para las cuentas regresivas.
+        </span>
+      ))}
+      {!validTimes && <span className="small" style={{ color: 'var(--rojo)' }}>Pon fecha y hora de salida y llegada.</span>}
+      <button className="btn block primary" type="submit" disabled={!f.from || !f.to || !validTimes}>
         Guardar para todos
       </button>
     </form>

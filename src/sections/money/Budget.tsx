@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Pencil } from 'lucide-react'
 import { ALL, CORE, person } from '../../data/people'
-import { balances, CATEGORIES, fmt, fromCHF, type Expense, type Settlement } from '../../lib/money'
+import { balances, CATEGORIES, fmt, fromCHF, parseAmount, type Expense, type Settlement } from '../../lib/money'
 import { put, useItems } from '../../lib/store'
 import { todayIn, useNow } from '../../lib/time'
 import { toast } from '../../lib/toast'
@@ -321,7 +321,7 @@ export default function BudgetView({ me }: { me: string }) {
 
 function BudgetForm({ me, current, onDone }: { me: string; current: number; onDone: () => void }) {
   const [v, setV] = useState(String(Math.round(current)))
-  const n = parseFloat(v.replace(/\s/g, '').replace(',', '.'))
+  const n = parseAmount(v)
   const valid = Number.isFinite(n) && n > 0 && n < 100000
   return (
     <div className="col" style={{ gap: 12 }}>

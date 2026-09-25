@@ -7,6 +7,7 @@ import { CORE } from './data/people'
 import { Avatar } from './components/ui'
 import WhoAmI from './sections/WhoAmI'
 import ProfileSheet from './components/ProfileSheet'
+import ErrorBoundary from './components/ErrorBoundary'
 import Home from './sections/Home'
 import Itinerary, { type TripView } from './sections/Itinerary'
 import type { GroupView } from './sections/Group'
@@ -111,6 +112,7 @@ export default function App() {
       </header>
 
       <main className="page" key={tab}>
+        <ErrorBoundary resetKey={tab}>
         <Suspense fallback={<div className="empty"><span className="spinner" aria-label="Cargando" /></div>}>
           {tab === 'hoy' && <Home go={go} />}
           {tab === 'viaje' && <Itinerary initial={sub as TripView | undefined} />}
@@ -118,6 +120,7 @@ export default function App() {
           {tab === 'grupo' && <Group initial={sub as GroupView | undefined} />}
           {tab === 'info' && <Info initial={sub as InfoView | undefined} />}
         </Suspense>
+        </ErrorBoundary>
       </main>
 
       <nav className="nav" aria-label="Secciones">

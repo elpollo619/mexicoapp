@@ -12,7 +12,10 @@ let ratesDate = 'aprox.'
 
 try {
   const cached = localStorage.getItem(FX_KEY)
-  if (cached) ({ rates, date: ratesDate } = JSON.parse(cached))
+  if (cached) {
+    const c = JSON.parse(cached) as { rates: Record<Currency, number>; date: string }
+    if (Object.values(c.rates ?? {}).every((x) => Number.isFinite(x) && x > 0)) ({ rates, date: ratesDate } = c)
+  }
 } catch {
   /* ignore */
 }
@@ -24,7 +27,10 @@ export function useRates() {
     fetch('https://api.frankfurter.dev/v1/latest?base=CHF&symbols=MXN,USD,EUR')
       .then((r) => r.json())
       .then((j: { date: string; rates: { MXN: number; USD: number; EUR: number } }) => {
-        rates = { CHF: 1, MXN: 1 / j.rates.MXN, USD: 1 / j.rates.USD, EUR: 1 / j.rates.EUR }
+        const r = j?.rates ?? ({} as Record<string, number>)
+        // Solo aceptar tasas válidas: un NaN guardado arruinaría todos los saldos
+        if (![r.MXN, r.USD, r.EUR].every((x) => Number.isFinite(x) && x > 0)) return
+        rates = { CHF: 1, MXN: 1 / r.MXN, USD: 1 / r.USD, EUR: 1 / r.EUR }
         ratesDate = j.date
         try {
           localStorage.setItem(FX_KEY, JSON.stringify({ rates, date: ratesDate }))
@@ -36,6 +42,21 @@ export function useRates() {
       .catch(() => {})
   }, [])
   return state
+}
+
+/**
+ * Lee montos como los escribe la gente: "1500", "1,500", "1.500", "1'550", "1 234,50", "12.5", "12,50".
+ * Un separador seguido de exactamente 3 dígitos es de miles; con 1–2 dígitos es decimal.
+ */
+export function parseAmount(raw: string): number {
+  const s = raw.replace(/[\s'’]/g, '').replace(/^(MX)?\$|CHF|MXN/gi, '')
+  if (!/^\d[\d.,]*$/.test(s)) return NaN
+  const m = s.match(/^(.*?)[.,](\d{1,2})$/)
+  const intPart = m ? m[1] : s
+  const dec = m ? m[2] : ''
+  // La parte entera solo puede tener separadores de miles bien puestos
+  if (!/^\d{1,3}([.,]\d{3})*$|^\d+$/.test(intPart)) return NaN
+  return Number(intPart.replace(/[.,]/g, '') + (dec ? `.${dec}` : ''))
 }
 
 export const toCHF = (amount: number, cur: Currency) => amount * (rates[cur] ?? 1)

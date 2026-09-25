@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { ArrowLeftRight, ArrowRight, Check, Pencil, Trash2, Undo2 } from 'lucide-react'
 import { CORE, person } from '../../data/people'
-import { CATEGORIES, fmt, fromCHF, settleUp, toCHF, type Expense, type Settlement } from '../../lib/money'
+import { CATEGORIES, fmt, fromCHF, parseAmount, settleUp, toCHF, type Expense, type Settlement } from '../../lib/money'
 import { put, remove, uid, type Item } from '../../lib/store'
 import { Avatar, Avatars, buzz, name } from '../../components/ui'
 import { toast } from '../../lib/toast'
+import { todayIn } from '../../lib/time'
 
 export const catOf = (id: string) => CATEGORIES.find((c) => c.id === id) ?? CATEGORIES[CATEGORIES.length - 1]
 
@@ -192,7 +193,7 @@ export function Balances({ bal, settlements, me }: { bal: Record<string, number>
               <button
                 className={`btn small ${t.from === me || t.to === me ? '' : 'ghost'}`}
                 onClick={() => {
-                  put<Settlement>('settlement', `set:${uid()}`, { from: t.from, to: t.to, chf: t.chf, date: new Date().toISOString().slice(0, 10), by: me })
+                  put<Settlement>('settlement', `set:${uid()}`, { from: t.from, to: t.to, chf: t.chf, date: todayIn('America/Mexico_City'), by: me })
                   buzz([10, 40, 10])
                   toast(`${name(t.from)} → ${name(t.to)}: pagado ✓`)
                 }}
@@ -294,7 +295,7 @@ export function Stats({ expenses }: { expenses: Expense[] }) {
 export function Converter() {
   const [chf, setChf] = useState('10')
   const [flip, setFlip] = useState(false)
-  const n = parseFloat(chf.replace(',', '.'))
+  const n = parseAmount(chf)
   const out = Number.isFinite(n) ? (flip ? toCHF(n, 'MXN') : fromCHF(n, 'MXN')) : 0
   return (
     <div className="card col" style={{ gap: 8 }}>

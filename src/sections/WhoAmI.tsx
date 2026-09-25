@@ -21,8 +21,9 @@ export default function WhoAmI({ onDone }: { onDone: () => void }) {
 
   const choose = (id: string) => {
     buzz()
-    if (!profileOf(id) && status === 'syncing') {
-      toast('Un segundo, conectando con el grupo…')
+    // Crear PIN solo con los datos del grupo cargados: si no, podríamos pisar el PIN real de alguien
+    if (!profileOf(id) && status !== 'live' && status !== 'local') {
+      toast(status === 'syncing' ? 'Un segundo, conectando con el grupo…' : 'Necesitas conexión para entrar la primera vez')
       return
     }
     setStep(profileOf(id) ? { kind: 'pin', id } : { kind: 'create', id })
@@ -143,9 +144,11 @@ function PinPad({
 }) {
   const [pin, setPin] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
   const p = person(id)
 
   const press = (d: string) => {
+    if (busy) return
     buzz(8)
     setError(null)
     setPin((x) => (x.length < 4 ? x + d : x))
@@ -153,14 +156,17 @@ function PinPad({
 
   useEffect(() => {
     if (pin.length !== 4) return
-    const t = setTimeout(
-      () =>
-        void onComplete(pin, (msg) => {
+    const t = setTimeout(async () => {
+      setBusy(true)
+      try {
+        await onComplete(pin, (msg) => {
           setPin('')
           setError(msg ?? null)
-        }),
-      120,
-    )
+        })
+      } finally {
+        setBusy(false)
+      }
+    }, 120)
     return () => clearTimeout(t)
   }, [pin])
 

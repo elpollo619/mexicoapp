@@ -59,47 +59,93 @@ function setStatus(s: typeof status) {
   emit()
 }
 
-async function flush() {
-  if (!supabase || !outbox.length) return
-  while (outbox.length) {
-    const op = outbox[0]
-    const res =
-      op.op === 'put'
-        ? await supabase.from('mx_items').upsert({ id: op.item.id, trip: TRIP, kind: op.item.kind, data: op.item.data })
-        : await supabase.from('mx_items').delete().eq('id', op.id)
-    if (res.error) {
-      // Error de validación: descartar para no bloquear la cola; error de red: reintentar luego
-      if (res.status >= 400 && res.status < 500) {
-        outbox.shift()
+/** Solo un envío a la vez; las operaciones se quitan por identidad, nunca con shift() */
+let flushing: Promise<void> | null = null
+let retryTimer: ReturnType<typeof setTimeout> | undefined
+let retryDelay = 3000
+/** Aviso a la UI cuando el servidor rechaza un cambio (se registra desde main) */
+let onRejected: (msg: string) => void = () => {}
+export const setRejectHandler = (fn: (msg: string) => void) => (onRejected = fn)
+
+const RETRYABLE = new Set([0, 401, 403, 408, 425, 429])
+
+function scheduleRetry() {
+  clearTimeout(retryTimer)
+  retryTimer = setTimeout(() => void flush().then(() => { if (!outbox.length) void pull() }), retryDelay)
+  retryDelay = Math.min(retryDelay * 2, 60000)
+}
+
+function flush(): Promise<void> {
+  if (!supabase || !outbox.length) return Promise.resolve()
+  if (flushing) return flushing
+  flushing = (async () => {
+    while (outbox.length) {
+      const op = outbox[0]
+      const res =
+        op.op === 'put'
+          ? await supabase!.from('mx_items').upsert({ id: op.item.id, trip: TRIP, kind: op.item.kind, data: op.item.data })
+          : await supabase!.from('mx_items').delete().eq('id', op.id)
+      if (res.error) {
+        if (RETRYABLE.has(res.status) || res.status >= 500) {
+          setStatus('offline')
+          scheduleRetry()
+          break
+        }
+        // Rechazo definitivo (datos inválidos): se descarta para no bloquear la cola, pero se avisa
+        outbox = outbox.filter((o) => o !== op)
+        onRejected('No se pudo guardar un cambio (el servidor lo rechazó).')
         continue
       }
-      setStatus('offline')
-      return
+      outbox = outbox.filter((o) => o !== op)
+      retryDelay = 3000
     }
-    outbox.shift()
-  }
-  persist()
+    emit()
+  })().finally(() => {
+    flushing = null
+  })
+  return flushing
+}
+
+/** Cambios aplicados mientras hay un pull en curso: se repiten sobre la foto del servidor */
+let pulling = 0
+let replay: ((m: Map<string, Item>) => void)[] = []
+
+function apply(fn: (m: Map<string, Item>) => void) {
+  fn(items)
+  if (pulling) replay.push(fn)
 }
 
 async function pull() {
   if (!supabase) return
+  pulling++
   const { data, error } = await supabase.from('mx_items').select('*').eq('trip', TRIP).limit(5000)
+  pulling--
   if (error) {
+    if (!pulling) replay = []
     setStatus('offline')
     return
   }
   const fresh = new Map<string, Item>()
   for (const row of data as Item[]) fresh.set(row.id, row)
-  // Mantener lo que aún no se subió
-  for (const op of outbox) if (op.op === 'put') fresh.set(op.item.id, op.item)
-  for (const op of outbox) if (op.op === 'del') fresh.delete(op.id)
+  // Lo que aún no se subió, en el orden en que se hizo
+  for (const op of outbox) {
+    if (op.op === 'put') fresh.set(op.item.id, op.item)
+    else fresh.delete(op.id)
+  }
+  // Cambios locales o en vivo que llegaron durante la descarga
+  for (const fn of replay) fn(fresh)
+  if (!pulling) replay = []
   items = fresh
   setStatus('live')
 }
 
+const hasPending = (id: string) => outbox.some((o) => (o.op === 'put' ? o.item.id : o.id) === id)
 
+let started = false
 
 export async function start() {
+  if (started) return
+  started = true
   load()
   emit()
   if (!supabase) return
@@ -108,12 +154,16 @@ export async function start() {
   supabase
     .channel('mx-items')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'mx_items', filter: `trip=eq.${TRIP}` }, (payload) => {
-      if (payload.eventType === 'DELETE') items.delete((payload.old as Item).id)
-      else items.set((payload.new as Item).id, payload.new as Item)
+      const row = (payload.eventType === 'DELETE' ? payload.old : payload.new) as Item
+      // Si tenemos un cambio propio pendiente para esa id, manda el nuestro
+      if (!row?.id || hasPending(row.id)) return
+      if (payload.eventType === 'DELETE') apply((m) => m.delete(row.id))
+      else apply((m) => m.set(row.id, row))
       emit()
     })
     .subscribe((s) => {
-      if (s === 'SUBSCRIBED') setStatus('live')
+      // Al (re)conectar se recupera lo que pasó mientras no había conexión
+      if (s === 'SUBSCRIBED') void pull()
       else if (s === 'CHANNEL_ERROR' || s === 'TIMED_OUT') setStatus('offline')
     })
 
@@ -134,16 +184,17 @@ export function put<T extends object>(kind: Kind, id: string, data: T) {
   const now = new Date().toISOString()
   const prev = items.get(id)
   const item: Item = { id, kind, data: data as Record<string, unknown>, created_at: prev?.created_at ?? now, updated_at: now }
-  items.set(id, item)
-  outbox = outbox.filter((o) => !(o.op === 'put' && o.item.id === id))
+  apply((m) => m.set(id, item))
+  // Sustituye cualquier operación pendiente de la misma id (la última gana)
+  outbox = outbox.filter((o) => (o.op === 'put' ? o.item.id : o.id) !== id)
   outbox.push({ op: 'put', item })
   emit()
   void flush()
 }
 
 export function remove(id: string) {
-  items.delete(id)
-  outbox = outbox.filter((o) => !(o.op === 'put' && o.item.id === id))
+  apply((m) => m.delete(id))
+  outbox = outbox.filter((o) => (o.op === 'put' ? o.item.id : o.id) !== id)
   outbox.push({ op: 'del', id })
   emit()
   void flush()

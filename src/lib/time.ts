@@ -19,6 +19,7 @@ function tzOffset(epoch: number, tz: string) {
 
 /** "2026-10-06T16:05" en la zona `tz` → epoch ms */
 export function zoned(local: string, tz: string) {
+  if (!/^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?/.test(local ?? '')) return NaN
   const [d, t = '00:00'] = local.split('T')
   const [y, m, day] = d.split('-').map(Number)
   const [hh, mm] = t.split(':').map(Number)

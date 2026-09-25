@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Pause, Play, RotateCcw, Volume2, VolumeX } from 'lucide-react'
 import { buzz, Sheet } from '../../components/ui'
 import { useMe } from '../../lib/me'
+import { todayIn } from '../../lib/time'
 import { LOTERIA } from './content'
 import { seeded, shuffle } from './util'
 
@@ -72,6 +73,9 @@ export default function Loteria() {
     if (done) setAuto(false)
   }, [done])
 
+  // Que el cantor se calle al salir del juego
+  useEffect(() => () => window.speechSynthesis?.cancel(), [])
+
   const reset = () => {
     setAuto(false)
     setOrder(shuffle(LOTERIA.map((c) => c.n)))
@@ -80,7 +84,7 @@ export default function Loteria() {
   }
 
   // Tabla estable por persona y día
-  const today = new Date().toISOString().slice(0, 10)
+  const today = todayIn('America/Mexico_City')
   const tablaKey = `mx-tabla-${me}-${today}`
   const tabla = useMemo(() => shuffle(LOTERIA.map((c) => c.n), seeded(`${me}-${today}`)).slice(0, 16), [me, today])
   const [marks, setMarks] = useState<number[]>(() => readMarks(tablaKey))

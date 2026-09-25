@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Camera, Minus, Plus, X } from 'lucide-react'
 import { ALL, CORE } from '../../data/people'
-import { CATEGORIES, CURRENCIES, fmt, fromCHF, toCHF, type Currency, type Expense } from '../../lib/money'
+import { CATEGORIES, CURRENCIES, fmt, fromCHF, parseAmount, toCHF, type Currency, type Expense } from '../../lib/money'
 import { put, uid, uploadReceipt } from '../../lib/store'
 import { buzz, name, PeoplePicker } from '../../components/ui'
 import { toast } from '../../lib/toast'
@@ -42,7 +42,7 @@ export default function ExpenseForm({ me, edit, onDone }: { me: string; edit?: {
   const [uploading, setUploading] = useState(false)
   const [uploadFail, setUploadFail] = useState(false)
 
-  const amount = parseFloat(amountStr.replace(/\s/g, '').replace(',', '.'))
+  const amount = parseAmount(amountStr)
   const valid = title.trim().length > 0 && Number.isFinite(amount) && amount > 0
 
   const shares: Record<string, number> =
@@ -54,7 +54,8 @@ export default function ExpenseForm({ me, edit, onDone }: { me: string; edit?: {
           ? Object.fromEntries(custom.map((p) => [p, 1]))
           : Object.fromEntries(Object.entries(parts).filter(([, v]) => v > 0))
   const totalParts = Object.values(shares).reduce((a, b) => a + b, 0)
-  const chf = valid ? toCHF(amount, currency) : 0
+  // Al editar sin cambiar monto ni moneda se conserva el CHF original (no recalcular con la tasa de hoy)
+  const chf = !valid ? 0 : e && e.amount === amount && e.currency === currency ? e.chf : toCHF(amount, currency)
   const perPartCHF = totalParts ? chf / totalParts : 0
 
   async function onFile(f: File | undefined) {
