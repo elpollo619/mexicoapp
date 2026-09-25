@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
 import { maps } from '../data/trip'
 
 type Pt = { name: string; lat: number; lon: number; emoji: string; when: string }

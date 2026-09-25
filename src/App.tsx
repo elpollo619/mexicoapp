@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { Compass, Home as HomeIcon, LifeBuoy, Users, Wallet } from 'lucide-react'
 import { useMe } from './lib/me'
 import { useItems, useSyncStatus } from './lib/store'
@@ -9,9 +9,13 @@ import WhoAmI from './sections/WhoAmI'
 import ProfileSheet from './components/ProfileSheet'
 import Home from './sections/Home'
 import Itinerary, { type TripView } from './sections/Itinerary'
-import Money from './sections/Money'
-import Group, { type GroupView } from './sections/Group'
-import Info, { type InfoView } from './sections/Info'
+import type { GroupView } from './sections/Group'
+import type { InfoView } from './sections/Info'
+
+// Se cargan al abrir la pestaña (primera carga más rápida con datos móviles)
+const Money = lazy(() => import('./sections/Money'))
+const Group = lazy(() => import('./sections/Group'))
+const Info = lazy(() => import('./sections/Info'))
 
 export type Tab = 'hoy' | 'viaje' | 'plata' | 'grupo' | 'info'
 /** Destino de navegación: pestaña + (opcional) sub-vista */
@@ -107,11 +111,13 @@ export default function App() {
       </header>
 
       <main className="page" key={tab}>
-        {tab === 'hoy' && <Home go={go} />}
-        {tab === 'viaje' && <Itinerary initial={sub as TripView | undefined} />}
-        {tab === 'plata' && <Money />}
-        {tab === 'grupo' && <Group initial={sub as GroupView | undefined} />}
-        {tab === 'info' && <Info initial={sub as InfoView | undefined} />}
+        <Suspense fallback={<div className="empty"><span className="spinner" aria-label="Cargando" /></div>}>
+          {tab === 'hoy' && <Home go={go} />}
+          {tab === 'viaje' && <Itinerary initial={sub as TripView | undefined} />}
+          {tab === 'plata' && <Money />}
+          {tab === 'grupo' && <Group initial={sub as GroupView | undefined} />}
+          {tab === 'info' && <Info initial={sub as InfoView | undefined} />}
+        </Suspense>
       </main>
 
       <nav className="nav" aria-label="Secciones">

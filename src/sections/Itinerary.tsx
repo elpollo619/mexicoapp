@@ -1,14 +1,15 @@
-import { useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { ExternalLink, MapPin } from 'lucide-react'
 import { CITIES, DAYS, FOOD, STAYS, type Activity, type CityId } from '../data/trip'
 import { useMe } from '../lib/me'
 import { put, remove, useItems } from '../lib/store'
 import { dayParts, longDate, todayIn } from '../lib/time'
 import { Avatars, buzz } from '../components/ui'
-import MapView from './MapView'
 import Flights from './Flights'
 import { CITY_PHOTO, DAY_PHOTO, photo } from '../data/photos'
 import { currentDay } from './Home'
+
+const MapView = lazy(() => import('./MapView'))
 
 export type TripView = 'dia' | 'vuelos' | 'mapa' | 'comer' | 'dormir'
 type Signup = { item: string; person: string }
@@ -111,7 +112,11 @@ export default function Itinerary({ initial }: { initial?: TripView }) {
       )}
 
       {view === 'vuelos' && <Flights />}
-      {view === 'mapa' && <MapView />}
+      {view === 'mapa' && (
+        <Suspense fallback={<div className="map" />}>
+          <MapView />
+        </Suspense>
+      )}
     </>
   )
 }

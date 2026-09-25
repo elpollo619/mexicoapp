@@ -11,6 +11,7 @@ import { weatherIcon, useWeather } from '../lib/weather'
 import { depEpoch, hasTime, useFlights } from '../lib/flights'
 import { name } from '../components/ui'
 import { InstallBanner } from '../components/Install'
+import { CHECKLIST } from '../data/info'
 import { FlightPass } from './Flights'
 
 const DEPARTURE = zoned('2026-10-02T15:35', 'Europe/Zurich')
@@ -99,7 +100,7 @@ export default function Home({ go }: { go: Go }) {
           <span className="qi" style={{ background: 'var(--cempa-soft)', color: '#b26a00' }}>
             <Dices size={20} />
           </span>
-          ¿Quién paga?
+          Quién paga
         </button>
         <button onClick={() => go('info', 'moverse')}>
           <span className="qi" style={{ background: 'var(--turq-soft)', color: 'var(--turq)' }}>
@@ -115,6 +116,8 @@ export default function Home({ go }: { go: Go }) {
         </button>
       </div>
 
+      {phase === 'before' && <ToBook go={go} />}
+
       <section className="card col" style={{ gap: 10 }}>
         <div className="row between">
           <div className="col" style={{ gap: 0 }}>
@@ -125,14 +128,18 @@ export default function Home({ go }: { go: Go }) {
           </div>
         </div>
         <div className="col" style={{ gap: 7 }}>
-          {day.items.slice(0, 5).map((it) => (
-            <div key={it.id} className="row small" style={{ alignItems: 'baseline' }}>
-              <span className="muted num" style={{ width: 52, flex: 'none', fontWeight: 700, fontSize: 12 }}>
-                {it.time ?? '·'}
-              </span>
-              <span className="grow ellipsis">{it.title}</span>
-            </div>
-          ))}
+          {day.items.slice(0, 6).map((it) => {
+            const isNext = phase === 'during' && it.id === nextItemId(day.items, now, city.tz)
+            return (
+              <div key={it.id} className="row small" style={{ alignItems: 'baseline', fontWeight: isNext ? 700 : undefined }}>
+                <span className="num" style={{ width: 52, flex: 'none', fontWeight: 700, fontSize: 12, color: isNext ? 'var(--rosa)' : 'var(--muted)' }}>
+                  {it.time ?? '·'}
+                </span>
+                <span className="grow ellipsis">{it.title}</span>
+                {isNext && <span className="tag ok">Sigue</span>}
+              </div>
+            )
+          })}
         </div>
         <button className="btn ghost small" onClick={() => go('viaje', 'dia')}>
           Ver el día completo <ArrowRight size={15} />
@@ -244,5 +251,32 @@ function Converter() {
       <span className="num" style={{ fontWeight: 800 }}>{fmt(val * rates.MXN, 'CHF')}</span>
       <span className="tiny muted num">1 CHF = {fromCHF(1, 'MXN').toFixed(2)} MXN</span>
     </div>
+  )
+}
+
+/** Primera actividad con hora (HH:MM) que aún no pasó, en la hora local de la ciudad */
+function nextItemId(items: { id: string; time?: string }[], now: number, tz: string) {
+  const hm = new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(now))
+  return items.find((it) => it.time && /^\d{2}:\d{2}/.test(it.time) && it.time.slice(0, 5) >= hm)?.id
+}
+
+type Check = { key: string; by: string }
+
+function ToBook({ go }: { go: Go }) {
+  const checks = useItems<Check>('check')
+  const group = CHECKLIST.filter((c) => !c.group.startsWith('Antes de salir'))
+  const missing = group.filter((c) => !checks.some((x) => x.id === `check:${c.id}`))
+  if (!missing.length) return null
+  return (
+    <button className="card cempa row" style={{ textAlign: 'left' }} onClick={() => go('info', 'lista')}>
+      <span style={{ fontSize: 26 }}>📝</span>
+      <span className="grow col" style={{ gap: 0 }}>
+        <b>
+          Faltan {missing.length} reserva{missing.length > 1 ? 's' : ''}
+        </b>
+        <span className="small muted ellipsis">{missing.slice(0, 3).map((m) => m.label.split(' · ')[0].split(' (')[0]).join(' · ')}…</span>
+      </span>
+      <ArrowRight size={18} />
+    </button>
   )
 }
