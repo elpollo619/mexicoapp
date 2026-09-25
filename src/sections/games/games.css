@@ -1,0 +1,151 @@
+/* ---------- Menú ---------- */
+.g-menu { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.g-tile {
+  text-align: left; display: flex; flex-direction: column; gap: 4px; min-height: 128px; position: relative; overflow: hidden;
+  border: none; color: var(--ink);
+}
+.g-tile .g-emoji { font-size: 34px; line-height: 1; transition: transform 0.2s; }
+.g-tile:active .g-emoji { transform: scale(1.2) rotate(-8deg); }
+.g-tile b { font-family: 'Bricolage Grotesque', sans-serif; font-size: 16px; }
+.g-tile::after { content: ''; position: absolute; right: -26px; bottom: -26px; width: 80px; height: 80px; border-radius: 50%; background: var(--g-accent, var(--rosa)); opacity: 0.14; }
+.g-head { display: flex; align-items: center; gap: 10px; }
+.g-head h2 { flex: 1; }
+
+/* ---------- Confeti ---------- */
+.g-confetti { position: fixed; inset: 0; pointer-events: none; z-index: 70; overflow: hidden; }
+.g-confetti i { position: absolute; top: -20px; border-radius: 2px; animation: g-fall linear forwards; }
+@keyframes g-fall {
+  0% { transform: translate(0, 0) rotate(0); opacity: 1; }
+  100% { transform: translate(var(--drift), 105vh) rotate(calc(var(--rot) + 720deg)); opacity: 0.8; }
+}
+
+/* ---------- Ruleta ---------- */
+.g-wheel-wrap { position: relative; width: min(320px, 86vw); aspect-ratio: 1; margin: 6px auto 0; }
+.g-wheel { width: 100%; height: 100%; transition: transform 4.6s cubic-bezier(0.12, 0.72, 0.1, 1); filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.18)); }
+.g-pointer {
+  position: absolute; top: -6px; left: 50%; transform: translateX(-50%); width: 0; height: 0; z-index: 2;
+  border-left: 14px solid transparent; border-right: 14px solid transparent; border-top: 26px solid var(--ink);
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.3));
+}
+.g-hub { position: absolute; inset: 40%; border-radius: 50%; background: var(--card); display: grid; place-items: center; font-size: 26px; box-shadow: var(--shadow-2); border: 4px solid var(--ink); }
+.g-result { animation: g-pop 0.45s cubic-bezier(0.2, 1.6, 0.4, 1); }
+@keyframes g-pop { from { transform: scale(0.6); opacity: 0; } }
+.g-out { opacity: 0.4; text-decoration: line-through; }
+
+/* ---------- Dedo del destino ---------- */
+.g-finger {
+  position: fixed; inset: 0; z-index: 60; background: #120c14; color: white; touch-action: none;
+  user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; overflow: hidden;
+}
+.g-finger-hint { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 24px; pointer-events: none; }
+.g-finger-hint .big { font-size: 64px; }
+.g-finger-top { position: absolute; top: calc(env(safe-area-inset-top) + 12px); left: 12px; right: 12px; display: flex; justify-content: space-between; align-items: center; z-index: 2; }
+.g-touch {
+  position: absolute; width: 110px; height: 110px; margin: -55px 0 0 -55px; border-radius: 50%; pointer-events: none;
+  border: 6px solid currentColor; box-shadow: 0 0 30px currentColor, inset 0 0 22px currentColor;
+  animation: g-pulse 0.9s ease-in-out infinite alternate; transition: opacity 0.4s, transform 0.4s;
+}
+.g-touch::after { content: ''; position: absolute; inset: 22px; border-radius: 50%; background: currentColor; opacity: 0.5; }
+.g-touch.lost { opacity: 0.08; transform: scale(0.5); }
+.g-touch.win { animation: g-win 0.6s ease-in-out infinite alternate; }
+.g-touch.choosing { animation: g-pulse 0.18s ease-in-out infinite alternate; }
+@keyframes g-pulse { from { transform: scale(0.88); } to { transform: scale(1.08); } }
+@keyframes g-win { from { transform: scale(1.4); } to { transform: scale(1.8); } }
+
+/* ---------- Lotería ---------- */
+.g-lcard {
+  width: min(230px, 64vw); aspect-ratio: 5 / 7.4; margin: 0 auto; border-radius: 16px; background: #fffaf0; color: #2a1a10;
+  border: 6px solid #2a1a10; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); display: flex; flex-direction: column; padding: 8px;
+  animation: g-deal 0.45s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+.g-lcard .n { font-weight: 800; font-size: 18px; font-family: 'Bricolage Grotesque', sans-serif; }
+.g-lcard .e { flex: 1; display: grid; place-items: center; font-size: 96px; line-height: 1; border: 2px solid #2a1a10; border-radius: 8px; background: linear-gradient(160deg, #ffe7b3, #ffd0e6); }
+.g-lcard .t { text-align: center; font-weight: 800; font-size: 20px; font-family: 'Bricolage Grotesque', sans-serif; padding-top: 6px; }
+@keyframes g-deal { from { transform: translateY(-30px) rotate(-10deg) scale(0.8); opacity: 0; } }
+.g-drawn { display: grid; grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); gap: 5px; }
+.g-drawn span { aspect-ratio: 1; border-radius: 9px; background: var(--chip); display: grid; place-items: center; font-size: 22px; position: relative; }
+.g-drawn span small { position: absolute; bottom: 1px; right: 3px; font-size: 9px; font-weight: 700; color: var(--muted); }
+.g-tabla { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.g-tabla button {
+  aspect-ratio: 3 / 4; border-radius: 10px; border: 2px solid var(--line); background: #fffaf0; color: #2a1a10; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; font-size: 30px; position: relative; padding: 2px;
+}
+.g-tabla button small { font-size: 9.5px; font-weight: 700; line-height: 1.1; text-align: center; }
+.g-tabla button.called { border-color: var(--cempa); }
+.g-tabla button.marked::after {
+  content: ''; position: absolute; inset: 18%; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #c98a4b, #7a4a1f);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4); animation: g-pop 0.25s;
+}
+
+/* ---------- Cartas (yo nunca / verdad o reto) ---------- */
+.g-deck {
+  min-height: 250px; border-radius: 24px; padding: 26px 22px; display: flex; flex-direction: column; justify-content: center; gap: 12px;
+  color: white; font-family: 'Bricolage Grotesque', sans-serif; font-size: 25px; font-weight: 700; line-height: 1.2;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18); touch-action: pan-y; user-select: none; -webkit-user-select: none;
+  animation: g-deal 0.35s cubic-bezier(0.2, 1.3, 0.4, 1); cursor: pointer;
+}
+.g-deck small { font-family: Inter, sans-serif; font-size: 12.5px; font-weight: 700; opacity: 0.85; text-transform: uppercase; letter-spacing: 0.05em; }
+.g-deck.suave { background: linear-gradient(145deg, #00a3a3, #1f8a4c); }
+.g-deck.picante { background: linear-gradient(145deg, #e4007c, #d7263d); }
+.g-deck.verdad { background: linear-gradient(145deg, #2563eb, #7b2cbf); }
+.g-deck.reto { background: linear-gradient(145deg, #f5a623, #e4572e); }
+
+/* ---------- Trivia ---------- */
+.g-opt { text-align: left; border: 2px solid var(--line); background: var(--card); border-radius: 14px; padding: 12px 14px; font-weight: 600; transition: transform 0.1s; }
+.g-opt:active { transform: scale(0.98); }
+.g-opt.right { border-color: #22c55e; background: color-mix(in srgb, #22c55e 18%, var(--card)); }
+.g-opt.wrong { border-color: var(--rojo); background: color-mix(in srgb, var(--rojo) 16%, var(--card)); animation: g-shake 0.35s; }
+@keyframes g-shake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+
+/* ---------- Bingo ---------- */
+.g-bingo { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+.g-bingo button {
+  aspect-ratio: 1; border-radius: 10px; border: 1px solid var(--line); background: var(--card); padding: 2px; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 1px; font-size: 20px; overflow: hidden; transition: background 0.2s, transform 0.1s;
+}
+.g-bingo button small { font-size: 8.5px; line-height: 1.05; font-weight: 600; text-align: center; color: var(--muted); }
+.g-bingo button.on { background: var(--rosa); border-color: var(--rosa); }
+.g-bingo button.on small { color: white; }
+.g-bingo button.line { background: var(--cempa); border-color: var(--cempa); animation: g-pop 0.4s; }
+.g-bingo button.line small { color: #2b1a00; }
+.g-bingo button:disabled { cursor: default; }
+@media (min-width: 420px) { .g-bingo button small { font-size: 9.5px; } }
+
+/* ---------- Moneda y dados ---------- */
+.g-coin-wrap { perspective: 800px; width: 150px; height: 150px; margin: 8px auto; }
+.g-coin { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 1.6s cubic-bezier(0.25, 1, 0.3, 1); }
+.g-coin > div {
+  position: absolute; inset: 0; border-radius: 50%; backface-visibility: hidden; -webkit-backface-visibility: hidden; display: grid; place-items: center;
+  background: radial-gradient(circle at 35% 30%, #fff3c4, #d9a520 55%, #9c7010); border: 6px solid #b8860b; font-size: 58px;
+  box-shadow: inset 0 0 0 6px rgba(255, 255, 255, 0.25), 0 8px 18px rgba(0, 0, 0, 0.25);
+}
+.g-coin > div span { font-size: 11px; font-weight: 800; color: #5a3d00; position: absolute; bottom: 18px; letter-spacing: 0.08em; }
+.g-coin > .back { transform: rotateY(180deg); background: radial-gradient(circle at 35% 30%, #f1f1f1, #b9b9b9 55%, #7c7c7c); border-color: #d9a520; }
+.g-dice { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; padding: 6px 0; }
+.g-die {
+  width: 74px; height: 74px; border-radius: 16px; background: var(--card); border: 2px solid var(--line); box-shadow: var(--shadow-2);
+  display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); padding: 10px;
+}
+.g-die.rolling { animation: g-roll 0.2s linear infinite; }
+.g-die i { width: 13px; height: 13px; border-radius: 50%; background: var(--rosa); place-self: center; }
+@keyframes g-roll { 0% { transform: rotate(0) translateY(0); } 50% { transform: rotate(12deg) translateY(-6px); } 100% { transform: rotate(-12deg) translateY(0); } }
+
+/* ---------- Secciones del menú ---------- */
+.g-sec { display: flex; flex-direction: column; gap: 10px; }
+.g-sec h3 { font-size: 17px; }
+.g-notice { font-size: 13px; font-weight: 600; background: var(--turq-soft); color: var(--ink); border-radius: 12px; padding: 9px 12px; }
+
+/* ---------- Carta de póker (Kings Cup) ---------- */
+.g-pcard {
+  width: min(210px, 58vw); aspect-ratio: 5 / 7; margin: 0 auto; border-radius: 16px; background: #fffdf9; border: 1px solid var(--line-2);
+  box-shadow: var(--shadow-3); position: relative; cursor: pointer; animation: g-deal 0.4s cubic-bezier(0.2, 1.4, 0.4, 1);
+  font-family: 'Bricolage Grotesque', sans-serif;
+}
+.g-pcard .corner { position: absolute; top: 10px; left: 12px; font-size: 24px; font-weight: 800; line-height: 1; text-align: center; }
+.g-pcard .corner.br { top: auto; left: auto; bottom: 10px; right: 12px; transform: rotate(180deg); }
+.g-pcard .mid { position: absolute; inset: 0; display: grid; place-items: center; font-size: 96px; }
+.g-pcard.back {
+  background: repeating-linear-gradient(45deg, var(--rosa) 0 10px, #b0005a 10px 20px); border: 6px solid #fffdf9;
+}
+
+.g-deck.virus { background: linear-gradient(145deg, #4d7c0f, #15803d); }

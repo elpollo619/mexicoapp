@@ -1,0 +1,18 @@
+.exp-row { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; background: none; border: none; padding: 8px 0; }
+.exp-row + .exp-row { border-top: 1px solid var(--line); }
+.exp-emoji { width: 38px; height: 38px; border-radius: 12px; background: var(--chip); display: grid; place-items: center; font-size: 19px; flex: none; }
+.exp-thumb { width: 38px; height: 38px; border-radius: 10px; object-fit: cover; flex: none; border: 1px solid var(--line); }
+.exp-amt { text-align: right; flex: none; }
+.exp-amt b { display: block; font-size: 14.5px; }
+.day-head { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; margin: 4px 2px -4px; }
+.receipt-full { width: 100%; border-radius: 14px; border: 1px solid var(--line); display: block; }
+.parts-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
+.parts-row .n { width: 26px; text-align: center; font-weight: 800; }
+.bal-bar { height: 10px; border-radius: 6px; background: var(--chip); position: relative; overflow: hidden; }
+.bal-bar > div { position: absolute; top: 0; bottom: 0; border-radius: 6px; }
+.pos { color: var(--verde); }
+.neg { color: var(--rojo); }
+.confirm-row { display: flex; gap: 8px; align-items: center; background: var(--rosa-soft); border-radius: 12px; padding: 8px 10px; }
+.file-btn { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+.file-btn input { display: none; }
+.conv { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: end; }

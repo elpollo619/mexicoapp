@@ -1,0 +1,15 @@
+.poll-opt {
+  position: relative; width: 100%; text-align: left; border: 1.5px solid var(--line); background: var(--bg);
+  border-radius: 14px; padding: 10px 12px; overflow: hidden; display: block;
+}
+.poll-opt.mine { border-color: var(--rosa); }
+.poll-opt:disabled { cursor: default; }
+.poll-fill { position: absolute; inset: 0 auto 0 0; background: var(--rosa-soft); transition: width 0.4s ease; z-index: 0; }
+.poll-opt.mine .poll-fill { background: color-mix(in srgb, var(--rosa) 22%, var(--bg)); }
+.poll-opt > .poll-in { position: relative; z-index: 1; display: flex; align-items: center; gap: 8px; }
+.poll-check { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--line); flex: none; display: grid; place-items: center; color: white; }
+.poll-check.sq { border-radius: 6px; }
+.poll-opt.mine .poll-check { background: var(--rosa); border-color: var(--rosa); }
+.poll-count { font-weight: 800; font-size: 14px; }
+.poll-closed { opacity: 0.75; }
+.opt-input { display: flex; gap: 6px; align-items: center; }
