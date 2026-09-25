@@ -20,6 +20,7 @@ export default function Photos() {
   const upload = async (files: FileList | null) => {
     if (!files?.length) return
     const list = [...files].slice(0, 10)
+    if (files.length > 10) toast('Máximo 10 fotos por vez: subo las primeras 10')
     setBusy(list.length)
     let ok = 0
     for (const f of list) {

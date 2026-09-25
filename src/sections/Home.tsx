@@ -13,6 +13,9 @@ import { name } from '../components/ui'
 import { InstallBanner } from '../components/Install'
 import { CHECKLIST } from '../data/info'
 import { FlightPass } from './Flights'
+import SafeHome from '../features/SafeHome'
+import StormBanner from '../features/storm/StormBanner'
+import { DriverCardButton } from '../features/DriverCard'
 
 const DEPARTURE = zoned('2026-10-02T15:35', 'Europe/Zurich')
 const FIRST = DAYS[1].date
@@ -87,7 +90,13 @@ export default function Home({ go }: { go: Go }) {
         {phase === 'after' && <span className="big">¡Qué viaje! 🥹</span>}
       </section>
 
-      <InstallBanner onGuide={() => document.querySelector<HTMLButtonElement>('[aria-label="Mi perfil"]')?.click()} />
+      {(() => {
+        // Vigilar la ciudad de hoy o, si estamos tierra adentro, la próxima parada en la costa
+        const coast = day.city === 'pvr' || day.city === 'baja' ? city : CITIES[STOPS.find((s) => (s.city === 'pvr' || s.city === 'baja') && s.to > day.date)?.city ?? day.city]
+        return <StormBanner lat={coast.lat} lon={coast.lon} place={coast.short} />
+      })()}
+
+      <InstallBanner onGuide={() => go('info', 'instalar')} />
 
       <div className="quick">
         <button onClick={() => go('plata')}>
@@ -145,6 +154,9 @@ export default function Home({ go }: { go: Go }) {
           Ver el día completo <ArrowRight size={15} />
         </button>
       </section>
+
+      {phase === 'during' && <DriverCardButton />}
+      {phase === 'during' && <SafeHome />}
 
       {next && (
         <section className="col" style={{ gap: 8 }}>

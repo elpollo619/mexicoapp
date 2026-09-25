@@ -11,7 +11,8 @@ import { currentDay } from './Home'
 
 const MapView = lazy(() => import('./MapView'))
 
-export type TripView = 'dia' | 'vuelos' | 'mapa' | 'comer' | 'dormir'
+export const TRIP_VIEWS = ['dia', 'vuelos', 'mapa', 'comer', 'dormir'] as const
+export type TripView = (typeof TRIP_VIEWS)[number]
 type Signup = { item: string; person: string }
 
 const TYPE_ICON: Record<NonNullable<Activity['type']>, string> = {
@@ -26,12 +27,7 @@ const TYPE_ICON: Record<NonNullable<Activity['type']>, string> = {
 
 const CITY_TABS: Exclude<CityId, 'zrh' | 'home'>[] = ['cdmx', 'pvr', 'gdl', 'baja']
 
-export default function Itinerary({ initial }: { initial?: TripView }) {
-  const [view, setViewState] = useState<TripView>(initial ?? 'dia')
-  const setView = (v: TripView) => {
-    setViewState(v)
-    history.replaceState(null, '', `#viaje/${v}`)
-  }
+export default function Itinerary({ view, onView: setView }: { view: TripView; onView: (v: TripView) => void }) {
   const [date, setDate] = useState(() => currentDay(Date.now()).day.date)
   const day = DAYS.find((d) => d.date === date)!
   const [city, setCity] = useState<Exclude<CityId, 'zrh' | 'home'>>(() =>

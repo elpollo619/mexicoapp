@@ -222,15 +222,23 @@ export function useSyncStatus() {
 
 export async function uploadReceipt(file: File): Promise<string | null> {
   if (!supabase) return null
-  const blob = await shrinkImage(file)
-  const path = `${new Date().toISOString().slice(0, 10)}/${uid()}.jpg`
-  const { error } = await supabase.storage.from('mx-receipts').upload(path, blob, { contentType: 'image/jpeg' })
+  const img = await shrinkImage(file)
+  if (!img) return null
+  const path = `${new Date().toISOString().slice(0, 10)}/${uid()}.${img.ext}`
+  const { error } = await supabase.storage.from('mx-receipts').upload(path, img.blob, { contentType: img.type })
   if (error) return null
   return supabase.storage.from('mx-receipts').getPublicUrl(path).data.publicUrl
 }
 
-/** Reduce la foto a ~1400 px en JPEG para que suba rápido con datos móviles */
-async function shrinkImage(file: File): Promise<Blob> {
+const MAX_BYTES = 8 * 1024 * 1024
+const RAW_OK: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }
+
+/**
+ * Reduce la foto a ~1400 px en JPEG para que suba rápido con datos móviles.
+ * Si el navegador no puede leerla (p. ej. HEIC en Android), solo se sube tal cual
+ * cuando es un formato que todos pueden ver; si no, se rechaza (null).
+ */
+async function shrinkImage(file: File): Promise<{ blob: Blob; type: string; ext: string } | null> {
   try {
     const bmp = await createImageBitmap(file)
     const scale = Math.min(1, 1400 / Math.max(bmp.width, bmp.height))
@@ -238,8 +246,12 @@ async function shrinkImage(file: File): Promise<Blob> {
     canvas.width = Math.round(bmp.width * scale)
     canvas.height = Math.round(bmp.height * scale)
     canvas.getContext('2d')!.drawImage(bmp, 0, 0, canvas.width, canvas.height)
-    return await new Promise((res) => canvas.toBlob((b) => res(b ?? file), 'image/jpeg', 0.8))
+    bmp.close()
+    const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, 'image/jpeg', 0.8))
+    if (blob) return { blob, type: 'image/jpeg', ext: 'jpg' }
   } catch {
-    return file
+    /* formato que el navegador no sabe leer */
   }
+  const ext = RAW_OK[file.type]
+  return ext && file.size <= MAX_BYTES ? { blob: file, type: file.type, ext } : null
 }

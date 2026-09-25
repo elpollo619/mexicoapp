@@ -138,6 +138,7 @@ function PollCard({ poll, votes, me }: { poll: Item<Poll>; votes: Item<Vote>[]; 
                   href={o.url}
                   target="_blank"
                   rel="noreferrer"
+                  onKeyDown={(e) => e.stopPropagation()}
                   className="iconbtn"
                   style={{ width: 30, height: 30 }}
                   onClick={(e) => e.stopPropagation()}

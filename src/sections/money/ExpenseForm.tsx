@@ -182,7 +182,15 @@ export default function ExpenseForm({ me, edit, onDone }: { me: string; edit?: {
         <div className="row wrap">
           <label className="btn ghost small file-btn">
             <Camera size={16} /> {receipt ? 'Cambiar foto' : 'Subir foto'}
-            <input type="file" accept="image/*" capture="environment" onChange={(ev) => void onFile(ev.target.files?.[0])} />
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(ev) => {
+                void onFile(ev.target.files?.[0])
+                // Permite volver a elegir la misma foto después de un error
+                ev.target.value = ''
+              }}
+            />
           </label>
           {uploading && <span className="small muted">Subiendo…</span>}
           {receipt && !uploading && (

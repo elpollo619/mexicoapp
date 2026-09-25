@@ -6,20 +6,22 @@ import { useRates } from '../lib/money'
 import { put, remove, useItems } from '../lib/store'
 import { Avatar, buzz } from '../components/ui'
 import { InstallGuide } from '../components/Install'
+import { TipCalc } from '../features/TipCalc'
 import { ALL_CREDITS } from '../data/photos'
 
-export type InfoView = 'moverse' | 'lista' | 'sos' | 'tips' | 'jerga' | 'instalar'
+import type { InfoView } from './views'
+export type { InfoView }
 type View = InfoView
 type Check = { key: string; by: string }
 
-export default function Info({ initial }: { initial?: InfoView }) {
-  const [view, setView] = useState<View>(initial ?? 'moverse')
+export default function Info({ view, onView: setView }: { view: View; onView: (v: View) => void }) {
   return (
     <>
       <div className="chips">
         {(
           [
             ['moverse', '🚕 Taxis y Uber'],
+            ['propinas', '💸 Propinas'],
             ['lista', '✅ Checklist'],
             ['sos', '🆘 Emergencias'],
             ['tips', '💡 Dinero y clima'],
@@ -33,6 +35,7 @@ export default function Info({ initial }: { initial?: InfoView }) {
         ))}
       </div>
       {view === 'moverse' && <Rides />}
+      {view === 'propinas' && <TipCalc />}
       {view === 'lista' && <Checklist />}
       {view === 'sos' && <Sos />}
       {view === 'tips' && <Tips />}

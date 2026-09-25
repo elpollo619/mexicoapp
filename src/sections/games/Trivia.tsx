@@ -14,7 +14,8 @@ export default function Trivia() {
   const [game, setGame] = useState<Game | null>(null)
 
   const start = () => {
-    const total = Math.min(TRIVIA.length, rounds * players.length)
+    // Mismo número de preguntas para cada jugador
+    const total = Math.floor(Math.min(TRIVIA.length, rounds * players.length) / players.length) * players.length
     // Barajar también las opciones de cada pregunta
     const qs = shuffle(TRIVIA)
       .slice(0, total)

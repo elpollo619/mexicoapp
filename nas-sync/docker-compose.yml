@@ -1,0 +1,22 @@
+# México Lindo → NAS UGREEN
+# Copia cada 10 min las fotos del álbum y los tickets de gastos a una carpeta del NAS.
+# Solo lee de la app (clave publicable) y nunca borra nada en el NAS.
+#
+# En UGOS: Docker → Proyectos → Crear → pegar este archivo.
+# Cambia la ruta de la izquierda en "volumes" por tu carpeta compartida.
+services:
+  mexico-lindo-sync:
+    image: node:22-alpine
+    container_name: mexico-lindo-sync
+    restart: unless-stopped
+    environment:
+      - DEST=/data
+      - INTERVAL_MIN=10
+      - TZ=Europe/Zurich
+    volumes:
+      - /volume1/Fotos/Mexico 2026:/data
+    # Script fijado a un commit concreto del repo (no cambia solo)
+    command:
+      - sh
+      - -c
+      - wget -qO /tmp/sync.mjs https://raw.githubusercontent.com/elpollo619/mexicoapp/dce1794b82662bf203f7f330e0c7996887792a43/nas-sync/sync.mjs && node /tmp/sync.mjs

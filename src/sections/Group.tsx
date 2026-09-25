@@ -1,13 +1,12 @@
-import { useState } from 'react'
 import Polls from './Polls'
 import Games from './Games'
 import Photos from './Photos'
 import LuchadorGallery from '../components/LuchadorGallery'
 
-export type GroupView = 'votar' | 'juegos' | 'fotos' | 'cuates'
+import type { GroupView } from './views'
+export type { GroupView }
 
-export default function Group({ initial }: { initial?: GroupView }) {
-  const [view, setView] = useState<GroupView>(initial ?? 'votar')
+export default function Group({ view, onView: setView }: { view: GroupView; onView: (v: GroupView) => void }) {
   return (
     <>
       <div className="seg" role="tablist">
@@ -26,7 +25,6 @@ export default function Group({ initial }: { initial?: GroupView }) {
             className={view === v ? 'on' : ''}
             onClick={() => {
               setView(v)
-              history.replaceState(null, '', `#grupo/${v}`)
             }}
           >
             {l}

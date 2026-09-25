@@ -36,14 +36,15 @@ export default defineConfig({
             options: { cacheName: 'fonts', expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 365 } },
           },
           {
-            urlPattern: /^https:\/\/[abc]\.tile\.openstreetmap\.org\/.*/,
+            urlPattern: /^https:\/\/([abc]\.)?tile\.openstreetmap\.org\/.*/,
             handler: 'CacheFirst',
-            options: { cacheName: 'tiles', expiration: { maxEntries: 400, maxAgeSeconds: 60 * 60 * 24 * 30 } },
+            // Las imágenes de otros dominios llegan "opacas" (status 0): hay que permitirlas o no se guardan
+            options: { cacheName: 'tiles', cacheableResponse: { statuses: [0, 200] }, expiration: { maxEntries: 150, maxAgeSeconds: 60 * 60 * 24 * 30 } },
           },
           {
             urlPattern: /^https:\/\/fopblphtagryrdjotohf\.supabase\.co\/storage\/.*/,
             handler: 'CacheFirst',
-            options: { cacheName: 'receipts', expiration: { maxEntries: 200 } },
+            options: { cacheName: 'receipts', cacheableResponse: { statuses: [0, 200] }, expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 60 } },
           },
         ],
       },

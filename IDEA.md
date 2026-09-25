@@ -24,6 +24,14 @@ en Perfil e Info → Instalar.
 - Clima en vivo de la ciudad del día (Open-Meteo, gratis, sin clave).
 - Tipo de cambio en vivo CHF ↔ MXN (Frankfurter / BCE) + calculadora rápida.
 
+### Seguridad y día a día
+- **Alerta de huracanes** (NOAA/NHC vía una función de Supabase): tarjeta roja si hay una tormenta a menos de 800 km de la parada.
+- **¿Llegaste bien? 🏠**: cada noche cada uno marca que llegó; después de medianoche se ve quién falta.
+- **Tarjeta para el taxista**: dirección de dónde dormimos hoy en letra gigante, con la pantalla siempre encendida.
+- **Cerca de mí** en el mapa: farmacias, cajeros, hospitales y OXXO (OpenStreetMap).
+- **Calculadora de propinas** con guía de cuánto dar en México.
+- **Fotos al NAS**: un contenedor Docker en el NAS UGREEN copia cada 10 min las fotos y tickets (carpeta `nas-sync/`).
+
 ### 2. Itinerario 🗓️
 - Día a día del 2 al 19 de octubre: CDMX → Puerto Vallarta → Guadalajara (cumple de Pablo) → La Paz / Los Cabos → CDMX → casa.
 - Cada día: plan con horas, precio por persona, links de reserva (Viator, Civitatis, OpenTable…) y botón de Google Maps.

@@ -126,14 +126,20 @@ export default function BudgetView({ me }: { me: string }) {
   const pre = counted.filter((e) => e.date < TRIP_START).reduce((a, e) => a + shareFor(e), 0)
   const during = spent - pre
 
+  // Pablo e invitad@ solo están en Guadalajara (8–11 oct): su viaje dura 4 días
+  const gdlOnlyMe = scope === 'yo' && !CORE.includes(me)
+  const start = gdlOnlyMe ? '2026-10-08' : TRIP_START
+  const end = gdlOnlyMe ? '2026-10-11' : TRIP_END
+  const tripDays = gdlOnlyMe ? 4 : TRIP_DAYS
+
   // Ritmo (hora de Ciudad de México)
   const today = todayIn('America/Mexico_City', now)
-  const started = today >= TRIP_START
-  const ended = today > TRIP_END
-  const elapsed = started ? Math.min(TRIP_DAYS, dayDiff(TRIP_START, today) + 1) : 0
-  const left = TRIP_DAYS - elapsed
+  const started = today >= start
+  const ended = today > end
+  const elapsed = started ? Math.min(tripDays, dayDiff(start, today) + 1) : 0
+  const left = tripDays - elapsed
   const perDay = elapsed ? during / elapsed : 0
-  const projection = elapsed ? pre + perDay * TRIP_DAYS : spent
+  const projection = elapsed ? pre + perDay * tripDays : spent
   const remainingPerDay = left > 0 ? (budget - spent) / left : 0
   const verdict =
     projection <= budget * 0.95
@@ -141,16 +147,24 @@ export default function BudgetView({ me }: { me: string }) {
       : projection <= budget * 1.05
         ? { text: 'Ojo, vamos rápido 🔥', cls: 'cempa' }
         : { text: 'Nos pasamos 😬', cls: 'rosa' }
-  const heads = who.length
+  // En modo grupo los promedios "por persona" son sobre los 6 que hacen todo el viaje
+  const heads = scope === 'yo' ? 1 : CORE.length
 
   const byStop = STOPS.map((s) => ({
     key: s.id,
     label: `${s.emoji} ${s.label}`,
     spent: counted.filter((e) => stopOf(e.date).id === s.id).reduce((a, e) => a + shareFor(e), 0),
-    plan: scope === 'yo' ? s.plan : s.plan * CORE.length + (s.id === 'gdl' ? GDL_BUDGET * (ALL.length - CORE.length) : 0),
+    plan: gdlOnlyMe
+      ? s.id === 'gdl'
+        ? budget
+        : 0
+      : scope === 'yo'
+        ? s.plan
+        : s.plan * CORE.length + (s.id === 'gdl' ? GDL_BUDGET * (ALL.length - CORE.length) : 0),
   })).filter((r) => r.spent > 0 || r.plan > 0)
 
-  const planMult = scope === 'yo' ? 1 : CORE.length
+  // El plan por categoría se escala al presupuesto real (1.550 = plan completo)
+  const planMult = budget / DEFAULT_BUDGET
   const byCat = CATEGORIES.filter((c) => withFlights || c.id !== 'vuelo')
     .map((c) => ({
       key: c.id,
@@ -214,11 +228,11 @@ export default function BudgetView({ me }: { me: string }) {
           <>
             <b>El viaje aún no empieza ✈️</b>
             <div className="small">
-              Faltan <b className="num">{dayDiff(today, TRIP_START)}</b> días. Hasta ahora: <b className="num">{fmt(spent)}</b>
+              Faltan <b className="num">{dayDiff(today, start)}</b> días. Hasta ahora: <b className="num">{fmt(spent)}</b>
               {heads > 1 && <> ({fmt(spent / heads)} por persona)</>}.
             </div>
             <div className="small muted num">
-              Presupuesto por día{heads > 1 ? ' y persona' : ''}: {fmt((budget - spent) / TRIP_DAYS / heads)}
+              Presupuesto por día{heads > 1 ? ' y persona' : ''}: {fmt((budget - spent) / tripDays / heads)}
             </div>
           </>
         ) : (
@@ -226,7 +240,7 @@ export default function BudgetView({ me }: { me: string }) {
             <div className="row between">
               <b style={{ fontSize: 18 }}>{ended ? (spent <= budget ? 'Terminamos dentro del presupuesto 🎉' : 'Nos pasamos un poquito 😅') : verdict.text}</b>
               <span className="tag wait num">
-                día {elapsed}/{TRIP_DAYS}
+                día {elapsed}/{tripDays}
               </span>
             </div>
             <div className="grid2 small">

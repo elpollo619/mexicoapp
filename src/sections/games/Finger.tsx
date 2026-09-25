@@ -83,12 +83,11 @@ export default function Finger({ onClose }: { onClose: () => void }) {
     sync()
     if (phaseRef.current === 'done') {
       if (map.current.size === 0) {
-        window.setTimeout(() => {
-          setWinner(null)
-          setTeamOf({})
-          colorIdx.current = 0
-          setP('waiting')
-        }, 600)
+        // Nueva ronda en cuanto todos levantan el dedo (sin ignorar toques rápidos)
+        setWinner(null)
+        setTeamOf({})
+        colorIdx.current = 0
+        setP('waiting')
       }
       return
     }

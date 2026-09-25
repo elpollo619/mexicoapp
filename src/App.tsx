@@ -9,9 +9,8 @@ import WhoAmI from './sections/WhoAmI'
 import ProfileSheet from './components/ProfileSheet'
 import ErrorBoundary from './components/ErrorBoundary'
 import Home from './sections/Home'
-import Itinerary, { type TripView } from './sections/Itinerary'
-import type { GroupView } from './sections/Group'
-import type { InfoView } from './sections/Info'
+import Itinerary, { TRIP_VIEWS } from './sections/Itinerary'
+import { GROUP_VIEWS, INFO_VIEWS } from './sections/views'
 
 // Se cargan al abrir la pestaña (primera carga más rápida con datos móviles)
 const Money = lazy(() => import('./sections/Money'))
@@ -52,6 +51,11 @@ function readHash(): [Tab, string | undefined] {
   return TABS.some((t) => t.id === h) ? [h as Tab, sub] : ['hoy', undefined]
 }
 
+/** Sub-vista válida o la de por defecto (evita pantallas vacías con enlaces raros) */
+function pick<T extends string>(v: string | undefined, allowed: readonly T[], fallback: T): T {
+  return allowed.includes(v as T) ? (v as T) : fallback
+}
+
 type PollData = { closed?: boolean; city?: string }
 type VoteData = { poll: string; person: string }
 
@@ -66,19 +70,24 @@ export default function App() {
 
   useEffect(() => {
     const on = () => setRoute(readHash())
+    window.addEventListener('popstate', on)
     const onScroll = () => setScrolled(window.scrollY > 4)
     window.addEventListener('hashchange', on)
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => {
       window.removeEventListener('hashchange', on)
+      window.removeEventListener('popstate', on)
       window.removeEventListener('scroll', onScroll)
     }
   }, [])
 
   const go: Go = (t, s) => {
-    history.replaceState(null, '', `#${t}${s ? `/${s}` : ''}`)
+    const hash = `#${t}${s ? `/${s}` : ''}`
+    // pushState: el botón "atrás" del celular vuelve a la pantalla anterior
+    if (location.hash !== hash) history.pushState(null, '', hash)
+    const sameTab = t === tab
     setRoute([t, s])
-    window.scrollTo({ top: 0 })
+    if (!sameTab) window.scrollTo({ top: 0 })
   }
 
   if (!me) return (
@@ -115,10 +124,10 @@ export default function App() {
         <ErrorBoundary resetKey={tab}>
         <Suspense fallback={<div className="empty"><span className="spinner" aria-label="Cargando" /></div>}>
           {tab === 'hoy' && <Home go={go} />}
-          {tab === 'viaje' && <Itinerary initial={sub as TripView | undefined} />}
+          {tab === 'viaje' && <Itinerary view={pick(sub, TRIP_VIEWS, 'dia')} onView={(v) => go('viaje', v)} />}
           {tab === 'plata' && <Money />}
-          {tab === 'grupo' && <Group initial={sub as GroupView | undefined} />}
-          {tab === 'info' && <Info initial={sub as InfoView | undefined} />}
+          {tab === 'grupo' && <Group view={pick(sub, GROUP_VIEWS, 'votar')} onView={(v) => go('grupo', v)} />}
+          {tab === 'info' && <Info view={pick(sub, INFO_VIEWS, 'moverse')} onView={(v) => go('info', v)} />}
         </Suspense>
         </ErrorBoundary>
       </main>

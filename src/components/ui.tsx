@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import { person, PEOPLE } from '../data/people'
 import Luchador from './Luchador'
 
@@ -61,18 +61,43 @@ export function PeoplePicker({
 }
 
 export function Sheet({ open, onClose, children, title }: { open: boolean; onClose: () => void; children: ReactNode; title?: string }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const close = useRef(onClose)
+  close.current = onClose
   useEffect(() => {
     if (!open) return
-    const prev = document.body.style.overflow
+    const prevOverflow = document.body.style.overflow
+    const prevFocus = document.activeElement as HTMLElement | null
     document.body.style.overflow = 'hidden'
+    ref.current?.focus()
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') close.current()
+    }
+    window.addEventListener('keydown', onKey)
     return () => {
-      document.body.style.overflow = prev
+      document.body.style.overflow = prevOverflow
+      window.removeEventListener('keydown', onKey)
+      prevFocus?.focus?.()
     }
   }, [open])
   if (!open) return null
   return (
     <div className="sheet-bg" onClick={onClose}>
-      <div className="sheet" onClick={(e) => e.stopPropagation()} role="dialog" aria-label={title}>
+      <div
+        ref={ref}
+        className="sheet"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-label={title ?? 'Detalle'}
+        tabIndex={-1}
+        style={{ outline: 'none' }}
+      >
+        <div style={{ position: 'sticky', top: 0, height: 0, display: 'flex', justifyContent: 'flex-end', zIndex: 2 }}>
+          <button className="iconbtn" onClick={onClose} aria-label="Cerrar" style={{ width: 34, height: 34, marginTop: -2 }}>
+            ✕
+          </button>
+        </div>
         <div className="sheet-handle" />
         {title && <h2 style={{ marginBottom: 12 }}>{title}</h2>}
         {children}
