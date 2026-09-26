@@ -6,7 +6,8 @@
 - **iPhone (Safari):** abrir el link → botón Compartir → **Añadir a pantalla de inicio**.
 - **Android (Chrome):** abrir el link → menú ⋮ → **Instalar app**.
 
-Luego elige **"¿Quién eres?"** y listo. Funciona sin internet para el itinerario, vuelos e info;
+Luego toca tu luchador en **"¿Quién eres?"**, crea un PIN de 4 números y listo. Desde tu perfil (tu máscara arriba a la derecha)
+puedes **enviar a cada persona su link personal** (`…/mexicoapp/?yo=bia`), que abre directo en su PIN, y resetear el PIN de quien lo olvide. Funciona sin internet para el itinerario, vuelos e info;
 lo compartido (gastos, votos, "me apunto", checklist, bingo) se sincroniza al volver la conexión.
 
 ## Qué tiene

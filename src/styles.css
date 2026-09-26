@@ -353,6 +353,12 @@ img.photoimg { outline: 1px solid rgba(0, 0, 0, 0.1); outline-offset: -1px; }
 .pinpad button { width: 72px; height: 72px; border-radius: 50%; border: 1px solid var(--line); background: var(--card); font-size: 26px; font-weight: 600; font-family: 'Bricolage Grotesque', sans-serif; display: grid; place-items: center; box-shadow: var(--shadow-1); transition: transform 0.1s ease-out, background-color 0.15s; font-variant-numeric: tabular-nums; }
 .pinpad button:active { transform: scale(0.92); background: var(--chip); }
 .pin-lock { display: grid; place-items: center; color: var(--faint); }
+.pinpad.off button { opacity: 0.45; pointer-events: none; }
+/* Inicio de sesión: tarjetas de luchador */
+.login-grid .who { padding: 10px 12px; min-height: 76px; text-align: left; position: relative; overflow: hidden; }
+.login-grid .who::after { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--who); opacity: 0.85; }
+.login-grid .who.me { box-shadow: 0 0 0 2px var(--who); }
+.login-grid .who .avatar { box-shadow: 0 0 0 3px var(--card), 0 0 0 4px var(--who); }
 
 /* ---------- Pasos numerados ---------- */
 .steps { list-style: none; counter-reset: s; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }

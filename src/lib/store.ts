@@ -68,11 +68,24 @@ let onRejected: (msg: string) => void = () => {}
 export const setRejectHandler = (fn: (msg: string) => void) => (onRejected = fn)
 
 const RETRYABLE = new Set([0, 401, 403, 408, 425, 429])
+/** Una petición que no responde en este tiempo se da por perdida (portal cautivo, 4G malo) */
+const TIMEOUT_MS = 15000
+const timeout = () => AbortSignal.timeout(TIMEOUT_MS)
 
 function scheduleRetry() {
   clearTimeout(retryTimer)
   retryTimer = setTimeout(() => void flush().then(() => { if (!outbox.length) void pull() }), retryDelay)
   retryDelay = Math.min(retryDelay * 2, 60000)
+}
+
+/** Reintento manual (botón "Reintentar"): sin esperar el backoff */
+export async function retry() {
+  clearTimeout(retryTimer)
+  retryDelay = 3000
+  if (!supabase) return
+  setStatus('syncing')
+  await flush()
+  await pull()
 }
 
 function flush(): Promise<void> {
@@ -83,8 +96,8 @@ function flush(): Promise<void> {
       const op = outbox[0]
       const res =
         op.op === 'put'
-          ? await supabase!.from('mx_items').upsert({ id: op.item.id, trip: TRIP, kind: op.item.kind, data: op.item.data })
-          : await supabase!.from('mx_items').delete().eq('id', op.id)
+          ? await supabase!.from('mx_items').upsert({ id: op.item.id, trip: TRIP, kind: op.item.kind, data: op.item.data }).abortSignal(timeout())
+          : await supabase!.from('mx_items').delete().eq('id', op.id).abortSignal(timeout())
       if (res.error) {
         if (RETRYABLE.has(res.status) || res.status >= 500) {
           setStatus('offline')
@@ -118,11 +131,13 @@ function apply(fn: (m: Map<string, Item>) => void) {
 async function pull() {
   if (!supabase) return
   pulling++
-  const { data, error } = await supabase.from('mx_items').select('*').eq('trip', TRIP).limit(5000)
+  const { data, error } = await supabase.from('mx_items').select('*').eq('trip', TRIP).limit(5000).abortSignal(timeout())
   pulling--
   if (error) {
     if (!pulling) replay = []
     setStatus('offline')
+    // Sin esto, un fallo en la descarga inicial dejaba "Conectando…" para siempre
+    scheduleRetry()
     return
   }
   const fresh = new Map<string, Item>()
@@ -164,7 +179,8 @@ export async function start() {
     .subscribe((s) => {
       // Al (re)conectar se recupera lo que pasó mientras no había conexión
       if (s === 'SUBSCRIBED') void pull()
-      else if (s === 'CHANNEL_ERROR' || s === 'TIMED_OUT') setStatus('offline')
+      // El canal reintenta solo; que no pise "Conectando…" mientras hay una descarga en curso
+      else if ((s === 'CHANNEL_ERROR' || s === 'TIMED_OUT') && !pulling) setStatus('offline')
     })
 
   window.addEventListener('online', async () => {
