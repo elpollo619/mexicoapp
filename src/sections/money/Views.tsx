@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { ArrowLeftRight, ArrowRight, Check, Pencil, Trash2, Undo2 } from 'lucide-react'
 import { CORE, person } from '../../data/people'
 import { CATEGORIES, fmt, fromCHF, parseAmount, settleUp, toCHF, type Expense, type Settlement } from '../../lib/money'
-import { put, remove, uid, type Item } from '../../lib/store'
+import { put, remove, type Item } from '../../lib/store'
 import { Avatar, Avatars, buzz, name } from '../../components/ui'
 import { toast } from '../../lib/toast'
 import { todayIn } from '../../lib/time'
@@ -42,7 +42,7 @@ export function ExpenseList({ items, onOpen }: { items: Item<Expense>[]; onOpen:
               const e = it.data
               return (
                 <button key={it.id} className="exp-row" onClick={() => onOpen(it)}>
-                  {e.receipt ? <img src={e.receipt} alt="" className="exp-thumb" loading="lazy" /> : <span className="exp-emoji">{catOf(e.category).emoji}</span>}
+                  {e.receipt ? <img src={e.thumb ?? e.receipt} alt="" className="exp-thumb" loading="lazy" /> : <span className="exp-emoji">{catOf(e.category).emoji}</span>}
                   <span className="grow col" style={{ gap: 3 }}>
                     <b className="ellipsis">{e.title}</b>
                     <span className="row small muted" style={{ gap: 6 }}>
@@ -144,10 +144,72 @@ export function ExpenseDetail({ item, onEdit, onClose }: { item: Item<Expense>; 
   )
 }
 
+type Transfer = { from: string; to: string; chf: number }
+export type Paid = Transfer & { id: string }
+
+/**
+ * Registra un pago propuesto. El id es determinista (quién, a quién, cuánto, qué día): si el deudor y el
+ * acreedor lo marcan los dos, o alguien toca dos veces sin conexión, el upsert lo deja en un solo pago.
+ */
+function markPaid(t: Transfer, me: string): Paid {
+  const date = todayIn('America/Mexico_City')
+  const id = `set:${t.from}:${t.to}:${Math.round(t.chf * 100)}:${date}`
+  put<Settlement>('settlement', id, { from: t.from, to: t.to, chf: t.chf, date, by: me })
+  buzz([10, 40, 10])
+  toast(`${name(t.from)} → ${name(t.to)}: pagado ✓`)
+  return { ...t, id }
+}
+
+/** Botón "Pagado" con confirmación de un toque (como el reseteo de PIN) */
+export function PayButton({ t, me, primary, onPaid }: { t: Transfer; me: string; primary?: boolean; onPaid: (p: Paid) => void }) {
+  const [confirm, setConfirm] = useState(false)
+  const involved = t.from === me || t.to === me
+  if (confirm)
+    return (
+      <div className="confirm-row grow" style={{ flexBasis: '100%' }}>
+        <span className="grow small">¿Marcar como pagado?</span>
+        <button className="btn ghost small" onClick={() => setConfirm(false)}>
+          No
+        </button>
+        <button className={`btn small${primary ? ' primary' : ''}`} onClick={() => onPaid(markPaid(t, me))}>
+          <Check size={15} /> Confirmar
+        </button>
+      </div>
+    )
+  return (
+    <button className={`btn small ${primary ? 'primary' : involved ? '' : 'ghost'}`} onClick={() => setConfirm(true)}>
+      <Check size={15} /> Pagado
+    </button>
+  )
+}
+
+/** "Pagado ✓ · Deshacer" para el último pago marcado, por si fue un toque de más */
+export function UndoPaid({ paid, settlements, onDone }: { paid: Paid | null; settlements: Item<Settlement>[]; onDone: () => void }) {
+  if (!paid || !settlements.some((s) => s.id === paid.id)) return null
+  return (
+    <div className="confirm-row">
+      <span className="grow small">
+        {name(paid.from)} → {name(paid.to)} {fmt(paid.chf)}: pagado ✓
+      </span>
+      <button
+        className="btn ghost small"
+        onClick={() => {
+          remove(paid.id)
+          toast('Pago deshecho')
+          onDone()
+        }}
+      >
+        <Undo2 size={14} /> Deshacer
+      </button>
+    </div>
+  )
+}
+
 export function Balances({ bal, settlements, me }: { bal: Record<string, number>; settlements: Item<Settlement>[]; me: string }) {
   const ids = [...new Set([...CORE, ...Object.keys(bal)])].filter((p) => CORE.includes(p) || Math.abs(bal[p] ?? 0) > 0.005)
   const max = Math.max(1, ...ids.map((p) => Math.abs(bal[p] ?? 0)))
   const transfers = settleUp(bal)
+  const [paid, setPaid] = useState<Paid | null>(null)
   return (
     <>
       <div className="card col" style={{ gap: 10 }}>
@@ -186,23 +248,15 @@ export function Balances({ bal, settlements, me }: { bal: Record<string, number>
               <Avatar id={t.to} />
               <b className="grow">{name(t.to)}</b>
             </div>
-            <div className="row">
+            <div className="row wrap">
               <div className="grow">
                 <b style={{ fontSize: 18 }}>{fmt(t.chf)}</b> <span className="small muted">≈ {fmt(fromCHF(t.chf, 'MXN'), 'MXN')}</span>
               </div>
-              <button
-                className={`btn small ${t.from === me || t.to === me ? '' : 'ghost'}`}
-                onClick={() => {
-                  put<Settlement>('settlement', `set:${uid()}`, { from: t.from, to: t.to, chf: t.chf, date: todayIn('America/Mexico_City'), by: me })
-                  buzz([10, 40, 10])
-                  toast(`${name(t.from)} → ${name(t.to)}: pagado ✓`)
-                }}
-              >
-                <Check size={15} /> Pagado
-              </button>
+              <PayButton t={t} me={me} onPaid={setPaid} />
             </div>
           </div>
         ))}
+        <UndoPaid paid={paid} settlements={settlements} onDone={() => setPaid(null)} />
       </div>
 
       {settlements.length > 0 && (
@@ -261,7 +315,15 @@ export function Stats({ expenses }: { expenses: Expense[] }) {
     byPayer.set(e.payer, (byPayer.get(e.payer) ?? 0) + e.chf)
     byDay.set(e.date, (byDay.get(e.date) ?? 0) + e.chf)
   }
-  const days = byDay.size || 1
+  // "Por persona y día": promedio de los 6 que hacen todo el viaje, sin vuelos (se pagan antes y no son gasto "del día").
+  // Las partes de Pablo e invitad@ (solo GDL) no se cuentan: si no, el total/6 inflaría el promedio de los demás.
+  const daily = expenses.filter((e) => e.category !== 'vuelo')
+  const coreShare = (e: Expense) => {
+    const parts = Object.values(e.shares).reduce((a, b) => a + b, 0)
+    return parts ? (e.chf * CORE.reduce((a, p) => a + (e.shares[p] ?? 0), 0)) / parts : 0
+  }
+  const dailyDays = new Set(daily.map((e) => e.date)).size || 1
+  const perHeadDay = daily.reduce((a, e) => a + coreShare(e), 0) / CORE.length / dailyDays
   const sorted = (m: Map<string, number>) => [...m.entries()].sort((a, b) => b[1] - a[1])
   return (
     <>
@@ -272,8 +334,10 @@ export function Stats({ expenses }: { expenses: Expense[] }) {
         </div>
         <div className="card tight">
           <div className="tiny muted">Por persona y día</div>
-          <b style={{ fontSize: 20 }}>{fmt(total / CORE.length / days)}</b>
-          <div className="tiny muted">{days} días con gastos</div>
+          <b style={{ fontSize: 20 }}>{fmt(perHeadDay)}</b>
+          <div className="tiny muted">
+            {dailyDays} {dailyDays === 1 ? 'día' : 'días'} con gastos · sin vuelos
+          </div>
         </div>
       </div>
       <div className="card col" style={{ gap: 10 }}>

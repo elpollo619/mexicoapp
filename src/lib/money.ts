@@ -79,43 +79,77 @@ export type Expense = {
   shares: Record<string, number>
   category: string
   date: string
+  /** Foto del ticket (URL grande) */
   receipt?: string
+  /** Miniatura de la foto (los gastos viejos solo tienen `receipt`) */
+  thumb?: string
   by?: string
 }
 
 export type Settlement = { from: string; to: string; chf: number; date: string; by?: string }
 
-/** Saldo por persona en CHF: positivo = le deben, negativo = debe */
+/** Redondeo a centavos (evita 16.666… y las sumas flotantes tipo 0.30000000000000004) */
+const cents = (chf: number) => Math.round(chf * 100)
+
+/**
+ * Reparte `total` centavos según las partes, sin perder ni inventar centavos:
+ * cada uno recibe la parte entera y los centavos que sobran van a quienes tienen el resto más grande
+ * (método del resto mayor; en empate, en el orden en que están las partes).
+ */
+export function splitCents(total: number, shares: Record<string, number>): Record<string, number> {
+  const parts = Object.values(shares).reduce((a, b) => a + b, 0)
+  const out: Record<string, number> = {}
+  if (!parts) return out
+  const rest: { p: string; r: number }[] = []
+  let given = 0
+  for (const [p, s] of Object.entries(shares)) {
+    const exact = (total * s) / parts
+    const base = Math.floor(exact)
+    out[p] = base
+    given += base
+    rest.push({ p, r: exact - base })
+  }
+  rest.sort((a, b) => b.r - a.r)
+  for (let i = 0; i < total - given; i++) out[rest[i % rest.length].p] += 1
+  return out
+}
+
+/**
+ * Saldo por persona en CHF: positivo = le deben, negativo = debe.
+ * Se calcula en centavos enteros para que los saldos sumen exactamente 0 y "Pagado" deje a todos en 0.00.
+ */
 export function balances(expenses: Expense[], settlements: Settlement[]) {
   const bal: Record<string, number> = {}
   const add = (p: string, v: number) => (bal[p] = (bal[p] ?? 0) + v)
   for (const e of expenses) {
-    const total = Object.values(e.shares).reduce((a, b) => a + b, 0)
-    if (!total) continue
-    add(e.payer, e.chf)
-    for (const [p, s] of Object.entries(e.shares)) add(p, (-e.chf * s) / total)
+    const split = splitCents(cents(e.chf), e.shares)
+    if (!Object.keys(split).length) continue
+    add(e.payer, cents(e.chf))
+    for (const [p, c] of Object.entries(split)) add(p, -c)
   }
   for (const s of settlements) {
-    add(s.from, s.chf)
-    add(s.to, -s.chf)
+    add(s.from, cents(s.chf))
+    add(s.to, -cents(s.chf))
   }
-  return bal
+  // `|| 0` convierte el -0 (que Intl mostraría como "-0.00") en 0
+  return Object.fromEntries(Object.entries(bal).map(([p, c]) => [p, c / 100 || 0]))
 }
 
-/** Mínimo de transferencias para quedar a mano (greedy) */
+/** Mínimo de transferencias para quedar a mano (greedy, en centavos enteros: la suma cuadra con los saldos) */
 export function settleUp(bal: Record<string, number>) {
-  const debtors = Object.entries(bal).filter(([, v]) => v < -0.005).map(([p, v]) => ({ p, v: -v })).sort((a, b) => b.v - a.v)
-  const creditors = Object.entries(bal).filter(([, v]) => v > 0.005).map(([p, v]) => ({ p, v })).sort((a, b) => b.v - a.v)
+  const byAmount = (a: { p: string; v: number }, b: { p: string; v: number }) => b.v - a.v || a.p.localeCompare(b.p)
+  const debtors = Object.entries(bal).map(([p, v]) => ({ p, v: -cents(v) })).filter((x) => x.v > 0).sort(byAmount)
+  const creditors = Object.entries(bal).map(([p, v]) => ({ p, v: cents(v) })).filter((x) => x.v > 0).sort(byAmount)
   const out: { from: string; to: string; chf: number }[] = []
   let i = 0
   let j = 0
   while (i < debtors.length && j < creditors.length) {
     const x = Math.min(debtors[i].v, creditors[j].v)
-    if (x > 0.005) out.push({ from: debtors[i].p, to: creditors[j].p, chf: Math.round(x * 100) / 100 })
+    out.push({ from: debtors[i].p, to: creditors[j].p, chf: x / 100 })
     debtors[i].v -= x
     creditors[j].v -= x
-    if (debtors[i].v < 0.005) i++
-    if (creditors[j].v < 0.005) j++
+    if (!debtors[i].v) i++
+    if (!creditors[j].v) j++
   }
   return out
 }
