@@ -16,3 +16,6 @@
 .file-btn { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
 .file-btn input { display: none; }
 .conv { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: end; }
+.card.hero .confirm-row { background: rgba(255, 255, 255, 0.14); color: #fff; }
+.card.hero .btn.ghost { background: rgba(255, 255, 255, 0.18); color: #fff; }
+.receipt-uploading { opacity: 0.5; }

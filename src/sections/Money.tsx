@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { Plus } from 'lucide-react'
-import { balances, fmt, fromCHF, useRates, type Expense, type Settlement } from '../lib/money'
+import { balances, fmt, fromCHF, settleUp, useRates, type Expense, type Settlement } from '../lib/money'
 import { useItems, type Item } from '../lib/store'
 import { useMe } from '../lib/me'
-import { Sheet } from '../components/ui'
+import { name, Sheet } from '../components/ui'
 import ExpenseForm from './money/ExpenseForm'
 import BudgetView from './money/Budget'
-import { Balances, Converter, ExpenseDetail, ExpenseList, Stats } from './money/Views'
+import { Balances, Converter, ExpenseDetail, ExpenseList, PayButton, Stats, UndoPaid, type Paid } from './money/Views'
 import './money/money.css'
 
 type View = 'vamos' | 'gastos' | 'saldos' | 'stats'
@@ -19,12 +19,18 @@ export default function Money() {
   const [view, setView] = useState<View>('vamos')
   const [form, setForm] = useState<{ edit?: Item<Expense> } | null>(null)
   const [open, setOpen] = useState<Item<Expense> | null>(null)
+  const [paid, setPaid] = useState<Paid | null>(null)
 
   const bal = balances(
     expenses.map((e) => e.data),
     settlements.map((s) => s.data),
   )
   const mine = bal[me] ?? 0
+  // Si una sola transferencia me toca, se dice con quién ("Debes CHF 40 a Bia") y se puede marcar pagada desde aquí
+  const mineT = settleUp(bal).filter((t) => t.from === me || t.to === me)
+  const single = mineT.length === 1 ? mineT[0] : null
+  const other = single ? name(single.from === me ? single.to : single.from) : null
+  const headline = mine > 0.005 ? (other ? `Te debe ${other}` : 'Te deben') : mine < -0.005 ? (other ? `Debes a ${other}` : 'Debes') : 'Estás a mano'
   const total = expenses.reduce((a, e) => a + e.data.chf, 0)
   const myShare = expenses.reduce((a, { data: e }) => {
     const parts = Object.values(e.shares).reduce((x, y) => x + y, 0)
@@ -36,9 +42,15 @@ export default function Money() {
   return (
     <>
       <div className="card hero col" style={{ gap: 4 }}>
-        <span className="small muted">{mine > 0.005 ? 'Te deben' : mine < -0.005 ? 'Debes' : 'Estás a mano'}</span>
+        <span className="small muted">{headline}</span>
         <span className="big">{fmt(Math.abs(mine))}</span>
         <span className="small muted">≈ {fmt(fromCHF(Math.abs(mine), 'MXN'), 'MXN')}</span>
+        {single && (
+          <div className="row" style={{ marginTop: 6 }}>
+            <PayButton t={single} me={me} primary onPaid={setPaid} />
+          </div>
+        )}
+        <UndoPaid paid={paid} settlements={settlements} onDone={() => setPaid(null)} />
         <div className="row between small" style={{ marginTop: 8 }}>
           <span>
             Grupo: <b>{fmt(total)}</b>

@@ -1,16 +1,42 @@
-import { useState } from 'react'
-import { Camera, Minus, Plus, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Camera, Minus, Plus, RotateCw, X } from 'lucide-react'
 import { ALL, CORE } from '../../data/people'
 import { CATEGORIES, CURRENCIES, fmt, fromCHF, parseAmount, toCHF, type Currency, type Expense } from '../../lib/money'
-import { put, uid, uploadReceipt } from '../../lib/store'
+import { put, uid, uploadImage } from '../../lib/store'
 import { buzz, name, PeoplePicker } from '../../components/ui'
 import { toast } from '../../lib/toast'
+import { todayIn } from '../../lib/time'
 
 type Mode = 'core' | 'all' | 'custom' | 'parts'
 
-const today = () => {
-  const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+/** La fecha del gasto es la de México, como el resto del módulo (no la del teléfono) */
+const today = () => todayIn('America/Mexico_City')
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
+
+/** Última moneda y categoría usadas, para no cambiarlas a cada gasto */
+const LAST_CUR = 'mx-last-currency'
+const LAST_CAT = 'mx-last-category'
+function remembered<T extends string>(key: string, ok: T[], fallback: T): T {
+  try {
+    const v = localStorage.getItem(key) as T | null
+    return v && ok.includes(v) ? v : fallback
+  } catch {
+    return fallback
+  }
+}
+const remember = (key: string, v: string) => {
+  try {
+    localStorage.setItem(key, v)
+  } catch {
+    /* ignore */
+  }
+}
+
+type Receipt = { url: string; thumb?: string }
+const UPLOAD_MSG = {
+  formato: 'Formato no compatible (¿HEIC?): compártela como JPEG.',
+  red: 'Sin conexión: el gasto se guarda sin foto, intenta subirla después.',
+  local: 'Sin servidor de fotos configurado: el gasto se guarda sin foto.',
 }
 
 const sameSet = (a: string[], b: string[]) => a.length === b.length && a.every((x) => b.includes(x))
@@ -28,9 +54,9 @@ export default function ExpenseForm({ me, edit, onDone }: { me: string; edit?: {
   const e = edit?.data
   const [title, setTitle] = useState(e?.title ?? '')
   const [amountStr, setAmountStr] = useState(e ? String(e.amount).replace('.', ',') : '')
-  const [currency, setCurrency] = useState<Currency>(e?.currency ?? 'MXN')
+  const [currency, setCurrency] = useState<Currency>(e?.currency ?? remembered(LAST_CUR, CURRENCIES, 'MXN'))
   const [payer, setPayer] = useState(e?.payer ?? me)
-  const [category, setCategory] = useState(e?.category ?? 'comida')
+  const [category, setCategory] = useState(e?.category ?? remembered(LAST_CAT, CATEGORIES.map((c) => c.id), 'comida'))
   const [date, setDate] = useState(e?.date ?? today())
   const [mode, setMode] = useState<Mode>(e ? initialMode(e.shares) : 'core')
   const [custom, setCustom] = useState<string[]>(e ? Object.keys(e.shares) : CORE)
@@ -38,12 +64,19 @@ export default function ExpenseForm({ me, edit, onDone }: { me: string; edit?: {
     const base = Object.fromEntries(ALL.map((p) => [p, 0]))
     return e ? { ...base, ...e.shares } : { ...base, ...Object.fromEntries(CORE.map((p) => [p, 1])) }
   })
-  const [receipt, setReceipt] = useState<string | undefined>(e?.receipt)
+  const [receipt, setReceipt] = useState<Receipt | undefined>(e?.receipt ? { url: e.receipt, thumb: e.thumb } : undefined)
   const [uploading, setUploading] = useState(false)
-  const [uploadFail, setUploadFail] = useState(false)
+  const [uploadMsg, setUploadMsg] = useState<string | null>(null)
+  /** Foto que no se pudo subir por red: se puede reintentar */
+  const [pending, setPending] = useState<File | null>(null)
+  /** Vista previa local (URL.createObjectURL) mientras sube */
+  const [preview, setPreview] = useState<string | null>(null)
+  useEffect(() => () => { if (preview) URL.revokeObjectURL(preview) }, [preview])
 
   const amount = parseAmount(amountStr)
-  const valid = title.trim().length > 0 && Number.isFinite(amount) && amount > 0
+  // Android permite "Borrar" la fecha: sin fecha válida no se guarda
+  const dateOk = DATE_RE.test(date)
+  const valid = title.trim().length > 0 && Number.isFinite(amount) && amount > 0 && dateOk
 
   const shares: Record<string, number> =
     mode === 'core'
@@ -54,18 +87,32 @@ export default function ExpenseForm({ me, edit, onDone }: { me: string; edit?: {
           ? Object.fromEntries(custom.map((p) => [p, 1]))
           : Object.fromEntries(Object.entries(parts).filter(([, v]) => v > 0))
   const totalParts = Object.values(shares).reduce((a, b) => a + b, 0)
-  // Al editar sin cambiar monto ni moneda se conserva el CHF original (no recalcular con la tasa de hoy)
-  const chf = !valid ? 0 : e && e.amount === amount && e.currency === currency ? e.chf : toCHF(amount, currency)
+  // Al editar sin cambiar la moneda se conserva la tasa del día original (e.chf / e.amount), no la de hoy:
+  // mismo monto → mismo CHF; otro monto → proporcional. Solo se usa la tasa de hoy al cambiar de moneda.
+  const chf = !valid
+    ? 0
+    : e && e.currency === currency && e.amount === amount
+      ? e.chf
+      : e && e.currency === currency && e.amount > 0 && e.chf > 0
+        ? amount * (e.chf / e.amount)
+        : toCHF(amount, currency)
   const perPartCHF = totalParts ? chf / totalParts : 0
 
   async function onFile(f: File | undefined) {
     if (!f) return
+    setPending(null)
+    setUploadMsg(null)
+    setPreview(URL.createObjectURL(f))
     setUploading(true)
-    setUploadFail(false)
-    const url = await uploadReceipt(f)
+    const r = await uploadImage(f)
     setUploading(false)
-    if (url) setReceipt(url)
-    else setUploadFail(true)
+    if (r.ok) {
+      setReceipt({ url: r.url, thumb: r.thumb })
+      return
+    }
+    setPreview(null)
+    setUploadMsg(UPLOAD_MSG[r.reason])
+    if (r.reason === 'red') setPending(f)
   }
 
   function save() {
@@ -79,10 +126,12 @@ export default function ExpenseForm({ me, edit, onDone }: { me: string; edit?: {
       shares,
       category,
       date,
-      ...(receipt ? { receipt } : {}),
+      ...(receipt ? { receipt: receipt.url, ...(receipt.thumb ? { thumb: receipt.thumb } : {}) } : {}),
       by: e?.by ?? me,
     }
     put('expense', edit?.id ?? `exp:${uid()}`, data)
+    remember(LAST_CUR, currency)
+    remember(LAST_CAT, category)
     buzz([10, 40, 10])
     toast(edit ? 'Gasto actualizado ✓' : 'Gasto guardado ✓')
     onDone()
@@ -130,6 +179,7 @@ export default function ExpenseForm({ me, edit, onDone }: { me: string; edit?: {
         Fecha
         <input className="input" type="date" value={date} onChange={(ev) => setDate(ev.target.value)} />
       </label>
+      {!dateOk && <div className="warn">Falta la fecha.</div>}
 
       <div className="field">
         Entre quiénes
@@ -192,17 +242,40 @@ export default function ExpenseForm({ me, edit, onDone }: { me: string; edit?: {
               }}
             />
           </label>
-          {uploading && <span className="small muted">Subiendo…</span>}
+          {uploading && (
+            <span className="row" style={{ gap: 6 }}>
+              {preview && <img src={preview} alt="" className="exp-thumb receipt-uploading" />}
+              <span className="small muted">Subiendo…</span>
+            </span>
+          )}
           {receipt && !uploading && (
             <span className="row" style={{ gap: 6 }}>
-              <img src={receipt} alt="Ticket" className="exp-thumb" />
-              <button type="button" className="iconbtn" style={{ width: 30, height: 30 }} onClick={() => setReceipt(undefined)} aria-label="Quitar foto">
+              <img src={preview ?? receipt.thumb ?? receipt.url} alt="Ticket" className="exp-thumb" />
+              <button
+                type="button"
+                className="iconbtn"
+                style={{ width: 30, height: 30 }}
+                onClick={() => {
+                  setReceipt(undefined)
+                  setPreview(null)
+                }}
+                aria-label="Quitar foto"
+              >
                 <X size={14} />
               </button>
             </span>
           )}
+          {pending && !uploading && (
+            <button type="button" className="btn ghost small" onClick={() => void onFile(pending)}>
+              <RotateCw size={14} /> Reintentar
+            </button>
+          )}
         </div>
-        {uploadFail && <span className="small" style={{ color: 'var(--rojo)' }}>No se pudo subir la foto (¿sin conexión?). Puedes guardar igual.</span>}
+        {uploadMsg && !uploading && (
+          <span className="small" style={{ color: 'var(--rojo)' }}>
+            {uploadMsg}
+          </span>
+        )}
       </div>
 
       <div className="row">
