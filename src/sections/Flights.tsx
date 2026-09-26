@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Pencil, Plane, Plus } from 'lucide-react'
 import { AIRPORT_TZ, type Flight } from '../data/flights'
 import { CORE } from '../data/people'
-import { depEpoch, arrEpoch, hasTime, knownAirport, useFlights } from '../lib/flights'
+import { depEpoch, arrEpoch, hasTime, inFlight as flying, knownAirport, useFlights } from '../lib/flights'
 import { useMe } from '../lib/me'
 import { put, uid } from '../lib/store'
 import { countdown, longDate, useNow } from '../lib/time'
@@ -153,7 +153,10 @@ export function FlightPass({ f, now, onEdit, compact }: { f: Flight; now: number
   const timed = hasTime(f)
   const past = timed && arrEpoch(f) < now
   const upcoming = timed && depEpoch(f) > now
-  const cd = timed ? countdown(depEpoch(f) - now) : null
+  const inFlight = flying(f, now)
+  // Cuenta atrás para despegar o, ya en el aire, para aterrizar
+  const cd = timed ? countdown((inFlight ? arrEpoch(f) : depEpoch(f)) - now) : null
+  const cdText = cd ? (cd.d > 0 ? `${cd.d} d ${cd.h} h` : `${cd.h} h ${cd.m} min`) : ''
   const mins = timed ? Math.round((arrEpoch(f) - depEpoch(f)) / 60000) : 0
   const nextDay = timed && f.arr.slice(0, 10) !== f.dep.slice(0, 10)
   const tzNote = AIRPORT_TZ[f.from] !== AIRPORT_TZ[f.to]
@@ -200,9 +203,9 @@ export function FlightPass({ f, now, onEdit, compact }: { f: Flight; now: number
             <b className="ellipsis">{f.airline}</b>
           </div>
           <div style={{ textAlign: 'right' }}>
-            <span className="label">{upcoming ? 'Sale en' : past ? 'Estado' : 'Hora'}</span>
-            <b style={{ color: upcoming ? 'var(--rosa)' : undefined }}>
-              {upcoming && cd ? (cd.d > 0 ? `${cd.d} d ${cd.h} h` : `${cd.h} h ${cd.m} min`) : past ? 'Volado ✓' : 'Por definir'}
+            <span className="label">{upcoming ? 'Sale en' : inFlight ? 'En vuelo ✈️' : past ? 'Estado' : 'Hora'}</span>
+            <b style={{ color: upcoming ? 'var(--rosa)' : inFlight ? 'var(--turq)' : undefined }}>
+              {upcoming ? cdText : inFlight ? `aterriza en ${cdText}` : past ? 'Volado ✓' : 'Por definir'}
             </b>
           </div>
         </div>

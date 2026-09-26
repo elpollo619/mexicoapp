@@ -1,5 +1,6 @@
 import { Home as HomeIcon, MessageCircle, Undo2 } from 'lucide-react'
 import { CORE } from '../data/people'
+import { tripTz } from '../data/trip'
 import { useMe } from '../lib/me'
 import { put, remove, useItems } from '../lib/store'
 import { longDate, useNow } from '../lib/time'
@@ -26,7 +27,9 @@ export default function SafeHome() {
   const arrived = who.filter((p) => home.has(p))
   const missing = who.filter((p) => !home.has(p))
   const mine = home.get(me)
-  const hour = hourIn(now)
+  // Hora local de donde estamos (Baja va 1 h menos que CDMX)
+  const tz = tripTz(now)
+  const hour = hourIn(now, tz)
   const late = hour < 6 && missing.length > 0
 
   const checkIn = () => {
@@ -36,7 +39,7 @@ export default function SafeHome() {
   }
 
   const hm = (iso: string) =>
-    new Intl.DateTimeFormat('es-MX', { timeZone: 'America/Mexico_City', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(iso))
+    new Intl.DateTimeFormat('es-MX', { timeZone: tz, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(iso))
 
   const wa = `https://wa.me/?text=${encodeURIComponent(`¿Ya llegaste? 🏠 Márcalo en la app México Lindo 🇲🇽`)}`
 
