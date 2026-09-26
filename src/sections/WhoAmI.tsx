@@ -5,6 +5,7 @@ import { hashPin, setMe, useMe, type Profile } from '../lib/me'
 import { put, useItems, useSyncStatus } from '../lib/store'
 import { photo } from '../data/photos'
 import { buzz } from '../components/ui'
+import { InstallCard } from '../components/Install'
 import { toast } from '../lib/toast'
 
 type Step = { kind: 'pick' } | { kind: 'pin'; id: string } | { kind: 'create'; id: string; first?: string }
@@ -71,6 +72,7 @@ export default function WhoAmI({ onDone }: { onDone: () => void }) {
                 )
               })}
             </div>
+            <InstallCard />
             {status === 'syncing' && <span className="tiny muted center">Conectando con el grupo…</span>}
           </>
         )}
