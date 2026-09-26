@@ -15,7 +15,10 @@ const TRIP = 'mexico-2026'
 const URL = import.meta.env.VITE_SUPABASE_URL as string | undefined
 const KEY = import.meta.env.VITE_SUPABASE_KEY as string | undefined
 
-export const supabase = URL && KEY ? createClient(URL, KEY, { auth: { persistSession: false } }) : null
+/** Ninguna petición HTTP se queda colgada más de 60 s (las de datos usan 15 s vía abortSignal) */
+const fetchWithTimeout: typeof fetch = (input, init) => fetch(input, { ...init, signal: init?.signal ?? AbortSignal.timeout(60000) })
+
+export const supabase = URL && KEY ? createClient(URL, KEY, { auth: { persistSession: false }, global: { fetch: fetchWithTimeout } }) : null
 
 const CACHE_KEY = 'mx-cache-v1'
 const OUTBOX_KEY = 'mx-outbox-v1'
@@ -128,12 +131,43 @@ function apply(fn: (m: Map<string, Item>) => void) {
   if (pulling) replay.push(fn)
 }
 
-async function pull() {
-  if (!supabase) return
+/** PostgREST recorta a 1000 filas por petición: se baja por páginas hasta que venga una corta */
+const PAGE = 1000
+
+async function fetchAll(): Promise<{ rows: Item[] } | { error: true }> {
+  const rows: Item[] = []
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await supabase!
+      .from('mx_items')
+      .select('*')
+      .eq('trip', TRIP)
+      .order('created_at', { ascending: true })
+      .order('id', { ascending: true })
+      .range(from, from + PAGE - 1)
+      .abortSignal(timeout())
+    if (error) return { error: true }
+    rows.push(...(data as Item[]))
+    if (data.length < PAGE) return { rows }
+  }
+}
+
+/** Una sola descarga a la vez: "volver a primer plano" y "canal reconectado" suelen llegar juntos */
+let inflight: Promise<void> | null = null
+
+function pull(): Promise<void> {
+  if (!supabase) return Promise.resolve()
+  if (inflight) return inflight
+  inflight = doPull().finally(() => {
+    inflight = null
+  })
+  return inflight
+}
+
+async function doPull() {
   pulling++
-  const { data, error } = await supabase.from('mx_items').select('*').eq('trip', TRIP).limit(5000).abortSignal(timeout())
+  const res = await fetchAll()
   pulling--
-  if (error) {
+  if ('error' in res) {
     if (!pulling) replay = []
     setStatus('offline')
     // Sin esto, un fallo en la descarga inicial dejaba "Conectando…" para siempre
@@ -141,7 +175,7 @@ async function pull() {
     return
   }
   const fresh = new Map<string, Item>()
-  for (const row of data as Item[]) fresh.set(row.id, row)
+  for (const row of res.rows) fresh.set(row.id, row)
   // Lo que aún no se subió, en el orden en que se hizo
   for (const op of outbox) {
     if (op.op === 'put') fresh.set(op.item.id, op.item)
@@ -236,38 +270,66 @@ export function useSyncStatus() {
   return { status, pending: outbox.length }
 }
 
-export async function uploadReceipt(file: File): Promise<string | null> {
-  if (!supabase) return null
+export type UploadResult = { ok: true; url: string; thumb: string } | { ok: false; reason: 'formato' | 'red' | 'local' }
+
+/**
+ * Sube una foto (ticket o álbum) reducida a ~1400 px más una miniatura de 400 px.
+ * Devuelve el motivo si falla: 'formato' (el navegador no la puede leer, p. ej. HEIC),
+ * 'red' (sin conexión o timeout) o 'local' (sin Supabase configurado).
+ */
+export async function uploadImage(file: File): Promise<UploadResult> {
+  if (!supabase) return { ok: false, reason: 'local' }
   const img = await shrinkImage(file)
-  if (!img) return null
-  const path = `${new Date().toISOString().slice(0, 10)}/${uid()}.${img.ext}`
-  const { error } = await supabase.storage.from('mx-receipts').upload(path, img.blob, { contentType: img.type })
-  if (error) return null
-  return supabase.storage.from('mx-receipts').getPublicUrl(path).data.publicUrl
+  if (!img) return { ok: false, reason: 'formato' }
+  const base = `${new Date().toISOString().slice(0, 10)}/${uid()}`
+  const bucket = supabase.storage.from('mx-receipts')
+  const [full, thumb] = await Promise.all([
+    bucket.upload(`${base}.${img.ext}`, img.blob, { contentType: img.type }),
+    bucket.upload(`${base}-t.jpg`, img.thumb, { contentType: 'image/jpeg' }),
+  ])
+  if (full.error || thumb.error) return { ok: false, reason: 'red' }
+  return {
+    ok: true,
+    url: bucket.getPublicUrl(`${base}.${img.ext}`).data.publicUrl,
+    thumb: bucket.getPublicUrl(`${base}-t.jpg`).data.publicUrl,
+  }
+}
+
+/** Compatibilidad: solo la URL grande, o null si falló */
+export async function uploadReceipt(file: File): Promise<string | null> {
+  const r = await uploadImage(file)
+  return r.ok ? r.url : null
 }
 
 const MAX_BYTES = 8 * 1024 * 1024
 const RAW_OK: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }
 
+type Shrunk = { blob: Blob; type: string; ext: string; thumb: Blob }
+
+async function toJpeg(bmp: ImageBitmap, max: number, quality: number): Promise<Blob | null> {
+  const scale = Math.min(1, max / Math.max(bmp.width, bmp.height))
+  const canvas = document.createElement('canvas')
+  canvas.width = Math.round(bmp.width * scale)
+  canvas.height = Math.round(bmp.height * scale)
+  canvas.getContext('2d')!.drawImage(bmp, 0, 0, canvas.width, canvas.height)
+  return new Promise<Blob | null>((res) => canvas.toBlob(res, 'image/jpeg', quality))
+}
+
 /**
- * Reduce la foto a ~1400 px en JPEG para que suba rápido con datos móviles.
- * Si el navegador no puede leerla (p. ej. HEIC en Android), solo se sube tal cual
- * cuando es un formato que todos pueden ver; si no, se rechaza (null).
+ * Reduce la foto a ~1400 px en JPEG (sube rápido con datos móviles) y genera una miniatura de 400 px.
+ * Respeta la orientación EXIF. Si el navegador no puede leerla (p. ej. HEIC en Android), se sube tal cual
+ * solo cuando es un formato que todos pueden ver; si no, se rechaza (null).
  */
-async function shrinkImage(file: File): Promise<{ blob: Blob; type: string; ext: string } | null> {
+async function shrinkImage(file: File): Promise<Shrunk | null> {
   try {
-    const bmp = await createImageBitmap(file)
-    const scale = Math.min(1, 1400 / Math.max(bmp.width, bmp.height))
-    const canvas = document.createElement('canvas')
-    canvas.width = Math.round(bmp.width * scale)
-    canvas.height = Math.round(bmp.height * scale)
-    canvas.getContext('2d')!.drawImage(bmp, 0, 0, canvas.width, canvas.height)
+    const bmp = await createImageBitmap(file, { imageOrientation: 'from-image' })
+    const [blob, thumb] = await Promise.all([toJpeg(bmp, 1400, 0.8), toJpeg(bmp, 400, 0.75)])
     bmp.close()
-    const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, 'image/jpeg', 0.8))
-    if (blob) return { blob, type: 'image/jpeg', ext: 'jpg' }
+    if (blob && thumb) return { blob, type: 'image/jpeg', ext: 'jpg', thumb }
   } catch {
     /* formato que el navegador no sabe leer */
   }
   const ext = RAW_OK[file.type]
-  return ext && file.size <= MAX_BYTES ? { blob: file, type: file.type, ext } : null
+  // Sin miniatura posible: se usa la misma imagen
+  return ext && file.size <= MAX_BYTES ? { blob: file, type: file.type, ext, thumb: file } : null
 }
