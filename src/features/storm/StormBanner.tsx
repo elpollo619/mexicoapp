@@ -20,11 +20,19 @@ const ENDPOINT = 'https://fopblphtagryrdjotohf.supabase.co/functions/v1/mx-storm
 const CACHE = 'mx-storms-v1'
 /** Radio de alerta en km */
 const ALERT_KM = 800
+/** Sin red, un aviso guardado hace más de 12 h ya no vale (la tormenta pudo disolverse): mejor no mostrar nada */
+const MAX_AGE_MS = 12 * 60 * 60 * 1000
 
-function readCache(): { updated: string; storms: Storm[] } | null {
+type StormData = { updated: string; storms: Storm[]; fetchedAt?: number }
+
+function readCache(): StormData | null {
   try {
     const raw = localStorage.getItem(CACHE)
-    return raw ? JSON.parse(raw) : null
+    const j: StormData | null = raw ? JSON.parse(raw) : null
+    if (!j || !Array.isArray(j.storms)) return null
+    const at = j.fetchedAt ?? Date.parse(j.updated)
+    if (!Number.isFinite(at) || Date.now() - at > MAX_AGE_MS) return null
+    return j
   } catch {
     return null
   }
@@ -77,13 +85,14 @@ export default function StormBanner({ lat, lon, place }: { lat: number; lon: num
   useEffect(() => {
     let alive = true
     const key = import.meta.env.VITE_SUPABASE_KEY as string | undefined
-    fetch(ENDPOINT, { headers: key ? { apikey: key } : {} })
+    fetch(ENDPOINT, { headers: key ? { apikey: key } : {}, signal: AbortSignal.timeout(10000) })
       .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
-      .then((j: { updated: string; storms: Storm[] }) => {
+      .then((j: StormData) => {
         if (!alive || !Array.isArray(j?.storms)) return
-        setData(j)
+        const fresh = { ...j, fetchedAt: Date.now() }
+        setData(fresh)
         try {
-          localStorage.setItem(CACHE, JSON.stringify(j))
+          localStorage.setItem(CACHE, JSON.stringify(fresh))
         } catch {
           /* ignore */
         }

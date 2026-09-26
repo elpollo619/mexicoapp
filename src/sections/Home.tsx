@@ -219,7 +219,7 @@ function Weather({ city: id }: { city: keyof typeof CITIES }) {
       <div className="row between">
         <div className="col" style={{ gap: 0 }}>
           <span className="label">Clima · {city.short}</span>
-          <span className="small muted">{w ? `Viento ${Math.round(w.wind)} km/h` : 'Cargando pronóstico…'}</span>
+          <span className="small muted">{w ? `Viento ${Math.round(w.wind)} km/h${w.stale ? ' (guardado)' : ''}` : 'Cargando pronóstico…'}</span>
         </div>
         {w && (
           <span className="row" style={{ gap: 6 }}>

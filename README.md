@@ -12,7 +12,7 @@ lo compartido (gastos, votos, "me apunto", checklist, bingo) se sincroniza al vo
 
 ## Qué tiene
 - **Hoy:** cuenta regresiva, plan del día, próximo vuelo, clima en vivo, conversor CHF ⇄ MXN.
-- **Plan:** itinerario día a día (2–19 oct) con links de reserva, "me apunto", dónde comer, dónde dormir y mapa.
+- **Plan:** itinerario día a día (3–19 oct) con links de reserva, "me apunto", dónde comer, dónde dormir y mapa.
 - **Vuelos:** todos los vuelos con quién va, equipaje y cuenta regresiva; se pueden editar/añadir.
 - **Plata:** subir gastos con foto del ticket, dividir entre todos o por partes, saldos y "quién le paga a quién".
 - **Votar:** encuestas en vivo (alojamiento, cena de cumple, cómo ir a GDL…).
