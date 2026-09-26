@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { CORE, person } from '../../data/people'
 import { buzz, PeoplePicker } from '../../components/ui'
 import { Confetti } from './util'
@@ -7,6 +7,18 @@ type Mode = 'uno' | 'elim'
 
 const CX = 100
 const R = 96
+/** Duración de la transición en games.css (.g-wheel) + un margen */
+const SPIN_MS = 4700
+
+/** Elige al azar el gajo ganador y cuántos grados girar para caer en él (fuera del render) */
+function randomSpin(n: number, rot: number) {
+  const idx = Math.floor(Math.random() * n)
+  const seg = 360 / n
+  const target = (idx + 0.5 + (Math.random() - 0.5) * 0.7) * seg
+  const cur = ((rot % 360) + 360) % 360
+  const delta = (360 - target - cur + 720) % 360
+  return { idx, rot: rot + 360 * (5 + Math.floor(Math.random() * 3)) + delta }
+}
 
 function slicePath(i: number, n: number) {
   if (n === 1) return `M ${CX} ${CX - R} A ${R} ${R} 0 1 1 ${CX - 0.01} ${CX - R} Z`
@@ -18,14 +30,47 @@ function slicePath(i: number, n: number) {
 
 export type Slice = { key: string; label: string; emoji: string; color: string }
 
-/** Ruleta SVG genérica: gira a `rot` grados con transición y avisa al terminar */
+/**
+ * Ruleta SVG genérica: gira a `rot` grados con transición y avisa al terminar.
+ * `transitionend` es solo un atajo: si no llega (movimiento reducido, pantalla bloqueada
+ * a mitad del giro) un temporizador avisa igual, así el botón nunca se queda en "Girando…".
+ */
 export function WheelSvg({ slices, rot, onEnd, onClick, hub }: { slices: Slice[]; rot: number; onEnd: () => void; onClick: () => void; hub: string }) {
   const n = slices.length
   const small = n > 6
+  const end = useRef(onEnd)
+  const fire = useRef<(() => void) | null>(null)
+  const prevRot = useRef(rot)
+  useEffect(() => {
+    end.current = onEnd
+  })
+  useEffect(() => {
+    if (prevRot.current === rot) return
+    prevRot.current = rot
+    const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    const done = () => {
+      if (fire.current !== done) return
+      fire.current = null
+      window.clearTimeout(t)
+      end.current()
+    }
+    fire.current = done
+    const t = window.setTimeout(done, reduced ? 350 : SPIN_MS)
+    return () => {
+      window.clearTimeout(t)
+      if (fire.current === done) fire.current = null
+    }
+  }, [rot])
   return (
     <div className="g-wheel-wrap">
       <div className="g-pointer" />
-      <svg viewBox="0 0 200 200" className="g-wheel" style={{ transform: `rotate(${rot}deg)` }} onTransitionEnd={onEnd} onClick={onClick}>
+      <svg
+        viewBox="0 0 200 200"
+        className="g-wheel"
+        style={{ transform: `rotate(${rot}deg)` }}
+        onTransitionEnd={(e) => e.target === e.currentTarget && fire.current?.()}
+        onClick={onClick}
+      >
         {n === 0 && <circle cx={CX} cy={CX} r={R} fill="var(--chip)" />}
         {slices.map((s, i) => {
           const mid = ((i + 0.5) / n) * 2 * Math.PI
@@ -74,21 +119,17 @@ export default function Wheel() {
 
   const spin = () => {
     if (spinning || n < 2 || loser) return
-    const idx = Math.floor(Math.random() * n)
-    const seg = 360 / n
-    const target = (idx + 0.5 + (Math.random() - 0.5) * 0.7) * seg
-    const cur = ((rot % 360) + 360) % 360
-    const delta = (360 - target - cur + 720) % 360
-    pending.current = alive[idx]
+    const r = randomSpin(n, rot)
+    pending.current = alive[r.idx]
     setLast(null)
     setSpinning(true)
-    setRot(rot + 360 * (5 + Math.floor(Math.random() * 3)) + delta)
+    setRot(r.rot)
     buzz(10)
   }
 
   const onEnd = () => {
     const who = pending.current
-    if (!who || !spinning) return
+    if (!who) return
     setSpinning(false)
     pending.current = null
     buzz([60, 40, 120])

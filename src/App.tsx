@@ -83,8 +83,13 @@ export default function App() {
 
   const go: Go = (t, s) => {
     const hash = `#${t}${s ? `/${s}` : ''}`
-    // pushState: el botón "atrás" del celular vuelve a la pantalla anterior
-    if (location.hash !== hash) history.pushState(null, '', hash)
+    // pushState: el botón "atrás" del celular vuelve a la pantalla anterior.
+    // Si hay una hoja o un juego abierto (entrada `overlay`), se reemplaza esa entrada
+    // para que "atrás" no vuelva a una pantalla con el overlay ya cerrado.
+    if (location.hash !== hash) {
+      if (history.state?.overlay) history.replaceState(null, '', hash)
+      else history.pushState(null, '', hash)
+    }
     const sameTab = t === tab
     setRoute([t, s])
     if (!sameTab) window.scrollTo({ top: 0 })

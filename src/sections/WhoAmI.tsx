@@ -7,6 +7,7 @@ import { readInvite } from '../lib/install'
 import { photo } from '../data/photos'
 import { Avatar, buzz } from '../components/ui'
 import PinPad from '../components/PinPad'
+import { InstallCard } from '../components/Install'
 import { toast } from '../lib/toast'
 
 type Step = { kind: 'pick' } | { kind: 'pin'; id: string } | { kind: 'create'; id: string; first?: string }
@@ -124,6 +125,7 @@ export default function WhoAmI({ onDone }: { onDone: () => void }) {
               })}
             </div>
             <ConnState status={status} />
+            <InstallCard />
           </>
         )}
 

@@ -68,10 +68,19 @@ export function PeoplePicker({
   )
 }
 
+let overlaySeq = 0
+
+/**
+ * Hoja modal. Al abrirse agrega una entrada al historial (`history.state.overlay`) para que el
+ * botón "atrás" del celular la cierre en vez de cambiar de pestaña; al cerrarla con ✕ o el fondo
+ * se quita esa entrada solo si sigue arriba de todo, para no saltarse una pantalla del router.
+ */
 export function Sheet({ open, onClose, children, title }: { open: boolean; onClose: () => void; children: ReactNode; title?: string }) {
   const ref = useRef<HTMLDivElement>(null)
   const close = useRef(onClose)
-  close.current = onClose
+  useEffect(() => {
+    close.current = onClose
+  })
   useEffect(() => {
     if (!open) return
     const prevOverflow = document.body.style.overflow
@@ -81,10 +90,20 @@ export function Sheet({ open, onClose, children, title }: { open: boolean; onClo
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') close.current()
     }
+    const key = ++overlaySeq
+    let own = true
+    const onPop = () => {
+      own = false
+      close.current()
+    }
+    history.pushState({ overlay: key }, '')
     window.addEventListener('keydown', onKey)
+    window.addEventListener('popstate', onPop)
     return () => {
       document.body.style.overflow = prevOverflow
       window.removeEventListener('keydown', onKey)
+      window.removeEventListener('popstate', onPop)
+      if (own && history.state?.overlay === key) history.back()
       prevFocus?.focus?.()
     }
   }, [open])

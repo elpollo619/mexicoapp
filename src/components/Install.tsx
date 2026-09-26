@@ -1,10 +1,62 @@
 import { useState } from 'react'
-import { Download, PlusSquare, Share, Share2, X } from 'lucide-react'
-import { isIOS, isStandalone, shareApp, useInstall } from '../lib/install'
+import { Copy, Download, PlusSquare, Share, Share2, X } from 'lucide-react'
+import { APP_URL, isIOS, isStandalone, shareApp, useInstall } from '../lib/install'
 import { toast } from '../lib/toast'
 
 const DISMISS = 'mx-install-dismissed'
-const APP_URL = 'https://elpollo619.github.io/mexicoapp/'
+
+async function copyLink() {
+  try {
+    await navigator.clipboard.writeText(APP_URL)
+    toast('Link copiado 📋')
+  } catch {
+    toast(`No se pudo copiar. El link es ${APP_URL}`)
+  }
+}
+
+/**
+ * Tarjeta compacta para la pantalla de inicio de sesión: en Android con `beforeinstallprompt`
+ * ofrece el botón "Instalar"; en iPhone explica los 2 pasos (Compartir → Añadir a pantalla de inicio).
+ * No aparece si la app ya está instalada.
+ */
+export function InstallCard() {
+  const { canPrompt, prompt } = useInstall()
+  if (isStandalone()) return null
+  const ios = isIOS()
+  return (
+    <div className="card install-card col" style={{ gap: 8 }}>
+      <div className="row" style={{ gap: 10 }}>
+        <span style={{ fontSize: 22, lineHeight: 1 }} aria-hidden>
+          📲
+        </span>
+        <b className="grow">Instalar la app en tu celular</b>
+        {canPrompt && (
+          <button className="btn primary small" style={{ minHeight: 40 }} onClick={() => void prompt()}>
+            <Download size={16} /> Instalar
+          </button>
+        )}
+      </div>
+      {ios ? (
+        <ol className="steps install-steps">
+          <li>
+            <span>
+              En <b>Safari</b>, toca <b>Compartir</b> <Share size={15} style={{ verticalAlign: -2 }} /> abajo al centro.
+            </span>
+          </li>
+          <li>
+            <span>
+              Elige <b>“Añadir a pantalla de inicio”</b> <PlusSquare size={15} style={{ verticalAlign: -2 }} /> y confirma.
+            </span>
+          </li>
+        </ol>
+      ) : (
+        <span className="small muted">
+          {canPrompt ? 'Ícono en tu pantalla, pantalla completa y funciona sin internet.' : 'En Chrome: menú ⋮ → “Instalar aplicación”. Queda como una app más, con ícono y sin internet.'}
+        </span>
+      )}
+    </div>
+  )
+}
 
 /** Banner compacto en "Hoy" para instalar la app */
 export function InstallBanner({ onGuide }: { onGuide: () => void }) {
@@ -80,35 +132,52 @@ export function InstallGuide() {
         </button>
       </div>
 
+      {/* Cada paso va en un <span>: el <li> es una cuadrícula (número + texto) y el texto suelto se partiría en celdas */}
       <ol className="steps">
         {os === 'ios' ? (
           <>
             <li>
-              Abre el link en <b>Safari</b> (no en el navegador de WhatsApp: toca ⋯ → “Abrir en Safari”).
+              <span>
+                Abre el link en <b>Safari</b> (no en el navegador de WhatsApp: toca ⋯ → “Abrir en Safari”).
+              </span>
             </li>
             <li>
-              Toca el botón <b>Compartir</b> <Share size={15} style={{ verticalAlign: -2 }} /> abajo al centro.
+              <span>
+                Toca el botón <b>Compartir</b> <Share size={15} style={{ verticalAlign: -2 }} /> abajo al centro.
+              </span>
             </li>
             <li>
-              Baja y toca <b>“Añadir a pantalla de inicio”</b> <PlusSquare size={15} style={{ verticalAlign: -2 }} />.
+              <span>
+                Baja y toca <b>“Añadir a pantalla de inicio”</b> <PlusSquare size={15} style={{ verticalAlign: -2 }} />.
+              </span>
             </li>
             <li>
-              Toca <b>Añadir</b>. Aparece el ícono 🇲🇽 “México Lindo” como una app más.
+              <span>
+                Toca <b>Añadir</b>. Aparece el ícono 🇲🇽 “México Lindo” como una app más.
+              </span>
             </li>
           </>
         ) : (
           <>
             <li>
-              Abre el link en <b>Chrome</b>.
+              <span>
+                Abre el link en <b>Chrome</b>.
+              </span>
             </li>
             <li>
-              Toca <b>“Instalar app”</b> en el aviso de abajo, o el menú <b>⋮</b> → <b>“Instalar aplicación”</b>.
+              <span>
+                Toca <b>“Instalar app”</b> en el aviso de abajo, o el menú <b>⋮</b> → <b>“Instalar aplicación”</b>.
+              </span>
             </li>
-            <li>Confirma. El ícono aparece en tu pantalla de inicio y en el cajón de apps.</li>
+            <li>
+              <span>Confirma. El ícono aparece en tu pantalla de inicio y en el cajón de apps.</span>
+            </li>
           </>
         )}
         <li>
-          Ábrela, elige tu nombre y crea tu <b>PIN</b> de 4 números. ¡Listo!
+          <span>
+            Ábrela, elige tu nombre y crea tu <b>PIN</b> de 4 números. ¡Listo!
+          </span>
         </li>
       </ol>
 
@@ -126,6 +195,9 @@ export function InstallGuide() {
           }}
         >
           <Share2 size={17} /> Compartir con el grupo
+        </button>
+        <button className="btn ghost block" onClick={() => void copyLink()}>
+          <Copy size={16} /> Copiar link
         </button>
       </div>
     </div>
