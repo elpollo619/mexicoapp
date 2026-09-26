@@ -32,6 +32,22 @@ export function todayIn(tz: string, now = Date.now()) {
   return new Intl.DateTimeFormat('en-CA', { timeZone: tz }).format(new Date(now))
 }
 
+/** Hora local (0–23) en una zona */
+export function hourIn(now: number, tz: string) {
+  return Number(new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour: '2-digit', hourCycle: 'h23' }).format(new Date(now)))
+}
+
+/** "HH:MM" local en una zona */
+export function hhmm(now: number, tz: string) {
+  return new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(now))
+}
+
+/** YYYY-MM-DD ± n días */
+export function addDays(date: string, n: number) {
+  const [y, m, d] = date.split('-').map(Number)
+  return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10)
+}
+
 export function useNow(intervalMs = 1000) {
   const [now, setNow] = useState(Date.now())
   useEffect(() => {

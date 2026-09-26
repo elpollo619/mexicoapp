@@ -19,7 +19,7 @@ en Perfil e Info → Instalar.
 ## Secciones
 
 ### 1. Hoy 🌞
-- Cuenta regresiva hasta el despegue (y durante el viaje: "día X de 17").
+- Cuenta regresiva hasta el despegue (y durante el viaje: "día X de 16").
 - Dónde estamos hoy, qué hay en el plan, próximo vuelo con cuenta regresiva.
 - Clima en vivo de la ciudad del día (Open-Meteo, gratis, sin clave).
 - Tipo de cambio en vivo CHF ↔ MXN (Frankfurter / BCE) + calculadora rápida.

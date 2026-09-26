@@ -6,7 +6,7 @@ import { put, useItems } from '../lib/store'
 import { useNow } from '../lib/time'
 import { toast } from '../lib/toast'
 import { Sheet, buzz, name } from '../components/ui'
-import { dayOf, nightKey } from './night'
+import { dayOf, stayKey } from './night'
 import './features.css'
 
 type StayNote = { name: string; address: string; phone?: string; by: string }
@@ -28,7 +28,7 @@ function slotFor(night: string): { slot: string; city: StayCity; pickIndex: numb
 export function DriverCardButton() {
   const me = useMe()!
   const now = useNow(60_000)
-  const night = nightKey(now)
+  const night = stayKey(now)
   const s = slotFor(night)
   const notes = useItems<StayNote>('note')
   const [edit, setEdit] = useState(false)

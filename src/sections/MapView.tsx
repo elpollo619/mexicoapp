@@ -4,6 +4,10 @@ import 'leaflet/dist/leaflet.css'
 import { CITIES, maps } from '../data/trip'
 import { currentDay } from './Home'
 import { findNearby, KINDS, locate, type NearbyKind } from '../features/nearby/overpass'
+import { PEOPLE, person } from '../data/people'
+import { avatarSrc } from '../data/avatars'
+import { useNow } from '../lib/time'
+import { ago, useWhere } from '../features/where/where'
 
 const esc = (t: string) => t.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`)
 
@@ -44,6 +48,10 @@ export default function MapView() {
   const el = useRef<HTMLDivElement>(null)
   const mapRef = useRef<L.Map | null>(null)
   const layerRef = useRef<L.LayerGroup | null>(null)
+  const peopleRef = useRef<L.LayerGroup | null>(null)
+  const now = useNow(30000)
+  const where = useWhere(now)
+  const people = PEOPLE.filter((p) => where[p.id])
   const [near, setNear] = useState<{ kind: NearbyKind | null; state: 'idle' | 'loading' | 'done' | 'error'; count: number; fallback: boolean }>({
     kind: null,
     state: 'idle',
@@ -118,6 +126,40 @@ export default function MapView() {
     }
   }, [])
 
+  // Marcadores de la gente (cara anime o máscara), se actualizan solos al llegar posiciones nuevas
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map) return
+    const layer = peopleRef.current ?? L.layerGroup().addTo(map)
+    peopleRef.current = layer
+    layer.clearLayers()
+    for (const p of people) {
+      const w = where[p.id]
+      const src = avatarSrc(p.id)
+      const face = src
+        ? `<img src="${src}" alt="" style="width:100%;height:100%;object-fit:cover;display:block">`
+        : `<div style="width:100%;height:100%;display:grid;place-items:center;background:${p.color};font-size:18px">${p.emoji}</div>`
+      const icon = L.divIcon({
+        className: '',
+        html: `<div style="width:40px;height:40px;border-radius:50%;overflow:hidden;border:3px solid ${p.color};box-shadow:0 2px 6px rgba(0,0,0,.4);background:#fff">${face}</div>`,
+        iconSize: [40, 40],
+        iconAnchor: [20, 20],
+      })
+      L.marker([w.lat, w.lon], { icon, zIndexOffset: 1000 })
+        .bindPopup(
+          `<b>${esc(person(p.id).name)}</b> · ${esc(ago(w.at, now))}${w.acc > 100 ? ` · ±${Math.round(w.acc)} m` : ''}<br><a href="https://www.google.com/maps/dir/?api=1&destination=${w.lat},${w.lon}&travelmode=walking" target="_blank" rel="noreferrer">Cómo llegar</a>`,
+        )
+        .addTo(layer)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(where), now])
+
+  const showGroup = () => {
+    const map = mapRef.current
+    if (!map || !people.length) return
+    map.fitBounds(L.latLngBounds(people.map((p) => [where[p.id].lat, where[p.id].lon])), { padding: [40, 40], maxZoom: 16 })
+  }
+
   return (
     <>
       <div style={{ position: 'relative' }}>
@@ -126,7 +168,14 @@ export default function MapView() {
           className="card tight col"
           style={{ position: 'absolute', top: 10, left: 10, right: 10, zIndex: 500, gap: 6, padding: '8px 10px', boxShadow: 'var(--shadow-2)' }}
         >
-          <span className="label">Cerca de mí</span>
+          <div className="row between">
+            <span className="label">Cerca de mí</span>
+            {people.length > 0 && (
+              <button className="chip on" onClick={showGroup} style={{ flex: 'none' }}>
+                📍 Ver al grupo ({people.length})
+              </button>
+            )}
+          </div>
           <div className="chips" style={{ paddingBottom: 0 }}>
             {KINDS.map((k) => (
               <button

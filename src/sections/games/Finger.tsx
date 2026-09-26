@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type PointerEvent as RPointerEvent } from 'react'
 import { X } from 'lucide-react'
 import { buzz } from '../../components/ui'
+import { shuffle } from './util'
 
 type Touch = { id: number; x: number; y: number; color: string }
 type Phase = 'waiting' | 'choosing' | 'done'
@@ -19,7 +20,9 @@ export default function Finger({ onClose }: { onClose: () => void }) {
   const phaseRef = useRef<Phase>('waiting')
   const colorIdx = useRef(0)
   const teamsRef = useRef(teams)
-  teamsRef.current = teams
+  useEffect(() => {
+    teamsRef.current = teams
+  }, [teams])
 
   const setP = (p: Phase) => {
     phaseRef.current = p
@@ -40,7 +43,7 @@ export default function Finger({ onClose }: { onClose: () => void }) {
         return
       }
       if (teamsRef.current) {
-        const ids = now.map((t) => t.id).sort(() => Math.random() - 0.5)
+        const ids = shuffle(now.map((t) => t.id))
         const assign: Record<number, number> = {}
         ids.forEach((id, i) => (assign[id] = i % 2))
         setTeamOf(assign)

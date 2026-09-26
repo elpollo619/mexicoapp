@@ -140,16 +140,24 @@ export default function BudgetView({ me }: { me: string }) {
   const left = tripDays - elapsed
   const perDay = elapsed ? during / elapsed : 0
   const projection = elapsed ? pre + perDay * tripDays : spent
-  const remainingPerDay = left > 0 ? (budget - spent) / left : 0
+
+  // Promedios "por persona": en modo grupo se hacen solo sobre los 6 que hacen todo el viaje (CORE).
+  // Las partes de Pablo e invitad@ (solo GDL) entran en `spent` y en el presupuesto del grupo, pero
+  // dividirlas entre 6 inflaría el promedio por día de los demás.
+  const avgWho = scope === 'yo' ? [me] : CORE
+  const perHead = avgWho.length
+  const avgShare = (e: Expense) => avgWho.reduce((a, p) => a + shareOf(e, p), 0)
+  const avgBudget = avgWho.reduce((a, p) => a + budgetOf(p), 0)
+  const avgSpent = counted.reduce((a, e) => a + avgShare(e), 0)
+  const avgPre = counted.filter((e) => e.date < TRIP_START).reduce((a, e) => a + avgShare(e), 0)
+  const perDayHead = elapsed ? (avgSpent - avgPre) / elapsed / perHead : 0
+  const remainingPerDayHead = left > 0 ? (avgBudget - avgSpent) / left / perHead : 0
   const verdict =
     projection <= budget * 0.95
       ? { text: 'Vamos bien 👌', cls: 'turq' }
       : projection <= budget * 1.05
         ? { text: 'Ojo, vamos rápido 🔥', cls: 'cempa' }
         : { text: 'Nos pasamos 😬', cls: 'rosa' }
-  // En modo grupo los promedios "por persona" son sobre los 6 que hacen todo el viaje
-  const heads = scope === 'yo' ? 1 : CORE.length
-
   const byStop = STOPS.map((s) => ({
     key: s.id,
     label: `${s.emoji} ${s.label}`,
@@ -229,10 +237,10 @@ export default function BudgetView({ me }: { me: string }) {
             <b>El viaje aún no empieza ✈️</b>
             <div className="small">
               Faltan <b className="num">{dayDiff(today, start)}</b> días. Hasta ahora: <b className="num">{fmt(spent)}</b>
-              {heads > 1 && <> ({fmt(spent / heads)} por persona)</>}.
+              {perHead > 1 && <> ({fmt(avgSpent / perHead)} por persona)</>}.
             </div>
             <div className="small muted num">
-              Presupuesto por día{heads > 1 ? ' y persona' : ''}: {fmt((budget - spent) / tripDays / heads)}
+              Presupuesto por día{perHead > 1 ? ' y persona' : ''}: {fmt((avgBudget - avgSpent) / tripDays / perHead)}
             </div>
           </>
         ) : (
@@ -245,20 +253,34 @@ export default function BudgetView({ me }: { me: string }) {
             </div>
             <div className="grid2 small">
               <div>
-                <div className="muted tiny">Promedio por día{heads > 1 ? ' y persona' : ''}</div>
-                <b className="num">{fmt(perDay / heads)}</b>
+                <div className="muted tiny">Promedio por día{perHead > 1 ? ' y persona' : ''}</div>
+                <b className="num">{fmt(perDayHead)}</b>
               </div>
               <div>
                 <div className="muted tiny">Proyección al final</div>
                 <b className={`num ${projection > budget ? 'neg' : ''}`}>{fmt(projection)}</b>
               </div>
             </div>
-            {!ended && (
+            {/* El último día no queda nada que repartir "por día": solo se avisa */}
+            {!ended && left <= 0 && (
               <div className="small num">
-                {remainingPerDay >= 0 ? (
+                Último día del viaje 🌅{' '}
+                {avgBudget - avgSpent >= 0 ? (
                   <>
-                    {scope === 'yo' ? 'Te quedan' : 'Nos quedan'} <b>{fmt(remainingPerDay / heads)}/día</b>
-                    {heads > 1 && ' por persona'} para {left} {left === 1 ? 'día' : 'días'}.
+                    — {scope === 'yo' ? 'te quedan' : 'nos quedan'} <b>{fmt((avgBudget - avgSpent) / perHead)}</b>
+                    {perHead > 1 && ' por persona'} para hoy.
+                  </>
+                ) : (
+                  <>— el presupuesto ya se fue, hoy comida corrida 🌮</>
+                )}
+              </div>
+            )}
+            {!ended && left > 0 && (
+              <div className="small num">
+                {remainingPerDayHead >= 0 ? (
+                  <>
+                    {scope === 'yo' ? 'Te quedan' : 'Nos quedan'} <b>{fmt(remainingPerDayHead)}/día</b>
+                    {perHead > 1 && ' por persona'} para {left} {left === 1 ? 'día' : 'días'}.
                   </>
                 ) : (
                   <>Ya nos comimos el presupuesto 🌮 — de aquí en adelante, comida corrida.</>

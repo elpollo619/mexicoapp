@@ -6,12 +6,13 @@
 - **iPhone (Safari):** abrir el link → botón Compartir → **Añadir a pantalla de inicio**.
 - **Android (Chrome):** abrir el link → menú ⋮ → **Instalar app**.
 
-Luego elige **"¿Quién eres?"** y listo. Funciona sin internet para el itinerario, vuelos e info;
+Luego toca tu luchador en **"¿Quién eres?"**, crea un PIN de 4 números y listo. Desde tu perfil (tu máscara arriba a la derecha)
+puedes **enviar a cada persona su link personal** (`…/mexicoapp/?yo=bia`), que abre directo en su PIN, y resetear el PIN de quien lo olvide. Funciona sin internet para el itinerario, vuelos e info;
 lo compartido (gastos, votos, "me apunto", checklist, bingo) se sincroniza al volver la conexión.
 
 ## Qué tiene
-- **Hoy:** cuenta regresiva, plan del día, próximo vuelo, clima en vivo, conversor CHF ⇄ MXN.
-- **Plan:** itinerario día a día (2–19 oct) con links de reserva, "me apunto", dónde comer, dónde dormir y mapa.
+- **Hoy:** cuenta regresiva, plan del día, próximo vuelo, clima en vivo, conversor CHF ⇄ MXN y **📍 Dónde estamos** (cada uno comparte su ubicación con un toque; se ve a cuánto está cada quien y en el mapa).
+- **Plan:** itinerario día a día (3–19 oct) con links de reserva, "me apunto", dónde comer, dónde dormir y mapa.
 - **Vuelos:** todos los vuelos con quién va, equipaje y cuenta regresiva; se pueden editar/añadir.
 - **Plata:** subir gastos con foto del ticket, dividir entre todos o por partes, saldos y "quién le paga a quién".
 - **Votar:** encuestas en vivo (alojamiento, cena de cumple, cómo ir a GDL…).

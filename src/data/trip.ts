@@ -1,3 +1,5 @@
+import { hourIn, todayIn, addDays } from '../lib/time'
+
 export const maps = (q: string) =>
   `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`
 
@@ -32,6 +34,44 @@ export const STOPS: { city: CityId; from: string; to: string; nights: number; pe
   { city: 'cdmx', from: '2026-10-17', to: '2026-10-18', nights: 1, people: 6 },
 ]
 
+/** Lugar concreto (coordenadas y zona) para clima, huracanes y hora local */
+export type Spot = Pick<City, 'name' | 'short' | 'lat' | 'lon' | 'tz'>
+
+/** Sub-paradas dentro de una ciudad: Baja tiene La Paz (12–15) y San José del Cabo (15–17, ~150 km más al sur) */
+export type SpotId = 'baja2'
+export const SPOTS: Record<SpotId, Spot> = {
+  baja2: { name: 'San José del Cabo', short: 'Los Cabos', lat: 23.0631, lon: -109.7028, tz: 'America/Mazatlan' },
+}
+
+/** Dónde estamos ese día: la sub-parada si la hay, si no la ciudad */
+export const spotOf = (day: Day): Spot => (day.spot ? SPOTS[day.spot] : CITIES[day.city])
+
+/** Zona horaria de referencia del viaje (CDMX, Vallarta y Guadalajara; Baja va 1 h menos) */
+export const TRIP_TZ = 'America/Mexico_City'
+
+/** Zona horaria en la que vivimos ese día (los días de ida y vuelta cuentan como CDMX) */
+export const tzOfDay = (day: Day) => (day.city === 'zrh' || day.city === 'home' ? TRIP_TZ : spotOf(day).tz)
+
+/** Hora (0–23) a partir de la cual "vivimos" en la zona del día: el primer vuelo con hora, si no el mediodía */
+const switchHour = (day?: Day) => {
+  const t = day?.items.find((it) => it.type === 'fly' && /^\d{2}:\d{2}/.test(it.time ?? ''))?.time
+  return t ? Number(t.slice(0, 2)) : 12
+}
+
+/**
+ * Zona horaria donde está el grupo ahora. Los cambios de zona (GDL → La Paz el 12, Los Cabos → CDMX el 17)
+ * pasan de día, así que hasta la hora del vuelo (o el mediodía) seguimos en la zona de ayer y después en la de hoy.
+ */
+export function tripTz(now: number) {
+  const t = todayIn(TRIP_TZ, now)
+  const today = DAYS.find((d) => d.date === t)
+  const day = hourIn(now, TRIP_TZ) < switchHour(today) ? DAYS.find((d) => d.date === addDays(t, -1)) : today
+  return day ? tzOfDay(day) : TRIP_TZ
+}
+
+/** Fecha YYYY-MM-DD de "hoy" en la zona horaria donde está el grupo (única fuente para Inicio, itinerario y noche) */
+export const todayOnTrip = (now: number) => todayIn(tripTz(now), now)
+
 export type Link = { label: string; url: string }
 
 export type Activity = {
@@ -51,6 +91,8 @@ export type Activity = {
 export type Day = {
   date: string
   city: CityId
+  /** Sub-parada (coordenadas/zona distintas a las de la ciudad) */
+  spot?: SpotId
   title: string
   items: Activity[]
 }
@@ -200,6 +242,7 @@ export const DAYS: Day[] = [
   {
     date: '2026-10-15',
     city: 'baja',
+    spot: 'baja2',
     title: 'Todos Santos → San José del Cabo',
     items: [
       { id: 'd15-drive', time: '09:00', type: 'move', title: 'Manejar a Todos Santos (~1 h)', desc: 'Check-out en La Paz, gasolina antes de salir. Solo de día: ganado y topes.' },
@@ -212,6 +255,7 @@ export const DAYS: Day[] = [
   {
     date: '2026-10-16',
     city: 'baja',
+    spot: 'baja2',
     title: 'Cabo San Lucas: El Arco 🌵',
     items: [
       { id: 'd16-drive', time: '09:00', type: 'move', title: 'A Cabo San Lucas (~40 min)', desc: 'Estacionar en la marina.' },
@@ -302,7 +346,7 @@ export const STAYS: Record<Exclude<CityId, 'zrh' | 'home'>, Stay[]> = {
     { name: 'Penthouse torre Península (el del cine)', area: 'Zona Hotelera', perNight: '?', desc: '5 hab. · cine privado · piscina frente al mar', url: 'https://www.airbnb.ch/rooms/1751934497596680246?check_in=2026-10-06&check_out=2026-10-08&adults=6' },
   ],
   gdl: [
-    { name: 'Hospedarte Central (4 dobles)', area: 'Av. de la Paz', perNight: '19 CHF/pers', total: '450 CHF (3 noches)', desc: '9,4 · elegir 4 "Deluxe Double". ⚠️ El vuelo es el 12: reservar 4 noches.', url: 'https://www.booking.com/hotel/mx/hospedarte-central.html?checkin=2026-10-08&checkout=2026-10-12&no_rooms=4&group_adults=8&selected_currency=CHF', pick: true },
+    { name: 'Hospedarte Central (4 dobles)', area: 'Av. de la Paz', perNight: '19 CHF/pers', total: '608 CHF (4 noches, 8 pers.)', desc: '9,4 · elegir 4 "Deluxe Double". ⚠️ El vuelo es el 12: reservar 4 noches (8–12 oct).', url: 'https://www.booking.com/hotel/mx/hospedarte-central.html?checkin=2026-10-08&checkout=2026-10-12&no_rooms=4&group_adults=8&selected_currency=CHF', pick: true },
     { name: 'Ramé Hotel Boutique', area: 'Chapultepec', perNight: '39 CHF/pers', total: '938 CHF', desc: '5★ · piscina, spa y sauna', url: 'https://www.booking.com/hotel/mx/boutique-rame.html?checkin=2026-10-08&checkout=2026-10-12&no_rooms=4&group_adults=8&selected_currency=CHF' },
     { name: 'Depas de Flor (contacto de Pablo)', area: 'Airbnb', perNight: 'preguntar', desc: '2 depas de 2 hab. · piscina. Escribir de parte de la familia Morales/Covantes.', url: 'https://www.airbnb.ch/rooms/735447915679774242' },
   ],

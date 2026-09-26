@@ -1,4 +1,4 @@
-import { useState, type CSSProperties, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { ArrowLeft } from 'lucide-react'
 import './games/games.css'
 import Wheel from './games/Wheel'
@@ -33,17 +33,48 @@ const GAMES: Game[] = [
   { id: 'probable', emoji: '👉', title: '¿Quién es más probable…?', desc: 'Todos señalan a la vez', accent: '#7b2cbf', drink: true, render: () => <MasProbable /> },
 ]
 
+let overlaySeq = 0
+
+/**
+ * El juego abierto no está en el hash del router: se agrega una entrada al historial mientras
+ * está abierto para que el botón "atrás" del celular vuelva a la lista de juegos, y se quita
+ * (solo si sigue arriba de todo) cuando se cierra con la flecha.
+ */
+function useBackClosesGame(active: boolean, onBack: () => void) {
+  const back = useRef(onBack)
+  useEffect(() => {
+    back.current = onBack
+  })
+  useEffect(() => {
+    if (!active) return
+    const key = ++overlaySeq
+    let own = true
+    const onPop = () => {
+      own = false
+      back.current()
+    }
+    history.pushState({ overlay: key }, '')
+    window.addEventListener('popstate', onPop)
+    return () => {
+      window.removeEventListener('popstate', onPop)
+      if (own && history.state?.overlay === key) history.back()
+    }
+  }, [active])
+}
+
 export default function Games() {
   const [open, setOpen] = useState<GameId | null>(null)
   const game = GAMES.find((g) => g.id === open)
+  const close = () => setOpen(null)
+  useBackClosesGame(open !== null, close)
 
-  if (open === 'finger') return <Finger onClose={() => setOpen(null)} />
+  if (open === 'finger') return <Finger onClose={close} />
 
   if (game) {
     return (
       <div className="col" style={{ gap: 14 }}>
         <div className="g-head">
-          <button className="iconbtn" onClick={() => setOpen(null)} aria-label="Volver a los juegos">
+          <button className="iconbtn" onClick={close} aria-label="Volver a los juegos">
             <ArrowLeft size={20} />
           </button>
           <h2>

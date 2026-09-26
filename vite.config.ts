@@ -8,7 +8,8 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
+      // 'prompt': la app avisa con un toast y la persona decide cuándo actualizar (nunca recarga sola a mitad de un formulario)
+      registerType: 'prompt',
       includeAssets: ['favicon.png', 'apple-touch-icon.png'],
       manifest: {
         name: 'México Lindo 2026',
@@ -28,7 +29,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,png,svg,woff2,webp}'],
+        globPatterns: ['**/*.{js,css,html,png,jpg,svg,woff2,webp}'],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/,
