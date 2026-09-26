@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { useSyncExternalStore } from 'react'
 
-export type Kind = 'expense' | 'settlement' | 'poll' | 'vote' | 'signup' | 'check' | 'bingo' | 'flight' | 'note' | 'photo' | 'profile' | 'budget'
+export type Kind = 'expense' | 'settlement' | 'poll' | 'vote' | 'signup' | 'check' | 'bingo' | 'flight' | 'note' | 'photo' | 'profile' | 'budget' | 'where'
 
 export type Item<T = Record<string, unknown>> = {
   id: string

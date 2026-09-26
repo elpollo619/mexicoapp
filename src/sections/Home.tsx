@@ -14,6 +14,7 @@ import { InstallBanner } from '../components/Install'
 import { CHECKLIST } from '../data/info'
 import { FlightPass } from './Flights'
 import SafeHome from '../features/SafeHome'
+import WhereCard from '../features/where/WhereCard'
 import StormBanner from '../features/storm/StormBanner'
 import { DriverCardButton } from '../features/DriverCard'
 
@@ -192,6 +193,7 @@ export default function Home({ go }: { go: Go }) {
 
       {phase === 'during' && <DriverCardButton />}
       {phase === 'during' && <SafeHome />}
+      <WhereCard now={now} go={go} />
 
       {next && (
         <section className="col" style={{ gap: 8 }}>

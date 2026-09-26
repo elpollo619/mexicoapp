@@ -372,3 +372,7 @@ img.photoimg { outline: 1px solid rgba(0, 0, 0, 0.1); outline-offset: -1px; }
 .install-card .install-steps { gap: 6px; }
 .install-card .install-steps li { font-size: 13.5px; grid-template-columns: 24px 1fr; }
 .install-card .install-steps li::before { width: 24px; height: 24px; font-size: 12px; }
+
+/* Dónde estamos */
+.where .where-row { padding: 6px 8px; border-radius: 12px; background: var(--chip); min-height: 44px; }
+.where .where-row:active { opacity: 0.8; }

@@ -11,7 +11,7 @@ puedes **enviar a cada persona su link personal** (`…/mexicoapp/?yo=bia`), que
 lo compartido (gastos, votos, "me apunto", checklist, bingo) se sincroniza al volver la conexión.
 
 ## Qué tiene
-- **Hoy:** cuenta regresiva, plan del día, próximo vuelo, clima en vivo, conversor CHF ⇄ MXN.
+- **Hoy:** cuenta regresiva, plan del día, próximo vuelo, clima en vivo, conversor CHF ⇄ MXN y **📍 Dónde estamos** (cada uno comparte su ubicación con un toque; se ve a cuánto está cada quien y en el mapa).
 - **Plan:** itinerario día a día (3–19 oct) con links de reserva, "me apunto", dónde comer, dónde dormir y mapa.
 - **Vuelos:** todos los vuelos con quién va, equipaje y cuenta regresiva; se pueden editar/añadir.
 - **Plata:** subir gastos con foto del ticket, dividir entre todos o por partes, saldos y "quién le paga a quién".
