@@ -25,3 +25,5 @@ export const arrEpoch = (f: Flight) => zoned(f.arr, tzOf(f.to))
 /** Tiene fecha y hora válidas (las plantillas "por confirmar" no tienen hora) */
 export const hasTime = (f: Flight) =>
   !(f.status === 'pendiente' && f.dep.endsWith('T00:00')) && Number.isFinite(depEpoch(f)) && Number.isFinite(arrEpoch(f))
+/** Está en el aire ahora mismo (despegó y aún no aterrizó) */
+export const inFlight = (f: Flight, now: number) => hasTime(f) && depEpoch(f) <= now && now < arrEpoch(f)

@@ -1,9 +1,9 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { ExternalLink, MapPin } from 'lucide-react'
-import { CITIES, DAYS, FOOD, STAYS, type Activity, type CityId } from '../data/trip'
+import { CITIES, DAYS, FOOD, STAYS, todayOnTrip, type Activity, type CityId } from '../data/trip'
 import { useMe } from '../lib/me'
 import { put, remove, useItems } from '../lib/store'
-import { dayParts, longDate, todayIn } from '../lib/time'
+import { dayParts, longDate, useNow } from '../lib/time'
 import { Avatars, buzz } from '../components/ui'
 import Flights from './Flights'
 import { CITY_PHOTO, DAY_PHOTO, photo } from '../data/photos'
@@ -34,7 +34,8 @@ export default function Itinerary({ view, onView: setView }: { view: TripView; o
     CITY_TABS.includes(day.city as never) ? (day.city as Exclude<CityId, 'zrh' | 'home'>) : 'cdmx',
   )
   const strip = useRef<HTMLDivElement>(null)
-  const today = todayIn('America/Mexico_City')
+  // "Hoy" en la zona horaria donde está el grupo (Baja va 1 h menos)
+  const today = todayOnTrip(useNow(60_000))
 
   useEffect(() => {
     strip.current?.querySelector('.on')?.scrollIntoView({ inline: 'center', block: 'nearest' })
@@ -240,7 +241,7 @@ function DayHeader({ date }: { date: string }) {
     <header className="photo" style={{ minHeight: 150, padding: 16, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', gap: 2 }}>
       {img && <img src={img.src} alt="" />}
       <span className="label" style={{ color: 'rgba(255,255,255,.85)' }}>
-        {idx > 0 && idx < DAYS.length - 1 ? `Día ${idx} · ` : ''}
+        {idx > 0 ? `Día ${idx} · ` : ''}
         {CITIES[day.city].name} · {longDate(day.date)}
       </span>
       <h2 style={{ color: '#fff', fontSize: 24 }}>{day.title}</h2>

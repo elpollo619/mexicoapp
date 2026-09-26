@@ -1,14 +1,14 @@
 import { useState } from 'react'
 import { ArrowRight, Car, Dices, Plus, Siren } from 'lucide-react'
 import type { Go } from '../App'
-import { CITIES, DAYS, STOPS } from '../data/trip'
+import { CITIES, DAYS, STOPS, spotOf, todayOnTrip, tripTz, type Spot } from '../data/trip'
 import { CITY_PHOTO, DAY_PHOTO, photo } from '../data/photos'
 import { useMe } from '../lib/me'
 import { balances, fmt, fromCHF, useRates, type Expense, type Settlement } from '../lib/money'
 import { useItems } from '../lib/store'
-import { countdown, dayParts, longDate, todayIn, useNow, zoned } from '../lib/time'
+import { countdown, dayParts, hhmm, longDate, useNow, zoned } from '../lib/time'
 import { weatherIcon, useWeather } from '../lib/weather'
-import { depEpoch, hasTime, useFlights } from '../lib/flights'
+import { arrEpoch, hasTime, inFlight, useFlights } from '../lib/flights'
 import { name } from '../components/ui'
 import { InstallBanner } from '../components/Install'
 import { CHECKLIST } from '../data/info'
@@ -20,29 +20,42 @@ import { DriverCardButton } from '../features/DriverCard'
 const DEPARTURE = zoned('2026-10-02T15:35', 'Europe/Zurich')
 const FIRST = DAYS[1].date
 const LAST = DAYS[DAYS.length - 1].date
+/** Días de viaje: del 3 al 18 de octubre (el 2 es solo el despegue) */
+const TRIP_DAYS = DAYS.length - 1
 
-/** Día del itinerario que toca mostrar "hoy" */
+/**
+ * Día del itinerario que toca mostrar "hoy".
+ * before: cuenta atrás · enVuelo: ya despegaron y en México aún es 2 oct · during: día N · after: ya volvimos
+ */
 export function currentDay(now: number) {
-  const t = todayIn('America/Mexico_City', now)
-  if (t < FIRST) return { day: DAYS[1], phase: 'before' as const }
+  if (now < DEPARTURE) return { day: DAYS[1], phase: 'before' as const }
+  const t = todayOnTrip(now)
+  if (t < FIRST) return { day: DAYS[1], phase: 'enVuelo' as const }
   if (t > LAST) return { day: DAYS[DAYS.length - 1], phase: 'after' as const }
   return { day: DAYS.find((d) => d.date === t) ?? DAYS[1], phase: 'during' as const }
 }
 
 const cityVar = (id: string) => `var(--c-${id === 'zrh' || id === 'home' ? 'cdmx' : id})`
+const coastal = (id: string) => id === 'pvr' || id === 'baja'
 
 export default function Home({ go }: { go: Go }) {
   const now = useNow(1000)
   const me = useMe()!
   const { day, phase } = currentDay(now)
   const city = CITIES[day.city]
+  const place = spotOf(day)
+  const tz = tripTz(now)
   const flights = useFlights()
+  // El vuelo en el aire sigue siendo "el próximo" hasta que aterriza
   const next =
-    flights.find((f) => hasTime(f) && depEpoch(f) > now && f.who.includes(me)) ?? flights.find((f) => hasTime(f) && depEpoch(f) > now)
+    flights.find((f) => hasTime(f) && arrEpoch(f) > now && f.who.includes(me)) ?? flights.find((f) => hasTime(f) && arrEpoch(f) > now)
+  const airborne = flights.find((f) => inFlight(f, now)) ?? flights.find((f) => hasTime(f) && arrEpoch(f) > now)
+  const landing = airborne ? countdown(arrEpoch(airborne) - now) : null
   const expenses = useItems<Expense>('expense').map((i) => i.data)
   const settlements = useItems<Settlement>('settlement').map((i) => i.data)
   const myBal = balances(expenses, settlements)[me] ?? 0
   const dayIndex = DAYS.findIndex((d) => d.date === day.date)
+  const lastDay = day.city === 'home'
   const hero = photo(...(DAY_PHOTO[day.date] ?? []), ...CITY_PHOTO[day.city])
   const cd = countdown(DEPARTURE - now)
 
@@ -53,7 +66,7 @@ export default function Home({ go }: { go: Go }) {
         <span className="label" style={{ color: 'rgba(255,255,255,.82)' }}>
           ¡Hola, {name(me)}!
         </span>
-        {phase === 'before' && DEPARTURE > now && (
+        {phase === 'before' && (
           <>
             <div className="row" style={{ gap: 18, alignItems: 'flex-end' }}>
               {(
@@ -77,13 +90,28 @@ export default function Home({ go }: { go: Go }) {
             </span>
           </>
         )}
+        {phase === 'enVuelo' && (
+          <>
+            <span className="big" style={{ fontSize: 34 }}>
+              En el aire ✈️
+            </span>
+            <span style={{ fontWeight: 650 }}>
+              {landing
+                ? `${airborne?.who.includes(me) ? 'aterrizas' : 'aterrizan'} en ${landing.h} h ${String(landing.m).padStart(2, '0')} min`
+                : 'rumbo a México 🇲🇽'}
+            </span>
+          </>
+        )}
         {phase === 'during' && (
           <>
             <span className="big" style={{ fontSize: 40 }}>
-              Día {dayIndex} <span style={{ opacity: 0.55, fontSize: 24 }}>/ {DAYS.length - 2}</span>
+              Día {dayIndex} <span style={{ opacity: 0.55, fontSize: 24 }}>/ {TRIP_DAYS}</span>
             </span>
             <span style={{ fontWeight: 650 }}>
-              {city.name} · {longDate(day.date)}
+              {lastDay ? 'Último día · ¡Casa! 🏠' : city.name} · {longDate(day.date)}
+            </span>
+            <span className="small num" style={{ color: 'rgba(255,255,255,.82)' }}>
+              🕒 {hhmm(now, tz)} aquí · en Suiza son las {hhmm(now, 'Europe/Zurich')}
             </span>
           </>
         )}
@@ -91,8 +119,15 @@ export default function Home({ go }: { go: Go }) {
       </section>
 
       {(() => {
-        // Vigilar la ciudad de hoy o, si estamos tierra adentro, la próxima parada en la costa
-        const coast = day.city === 'pvr' || day.city === 'baja' ? city : CITIES[STOPS.find((s) => (s.city === 'pvr' || s.city === 'baja') && s.to > day.date)?.city ?? day.city]
+        // Vigilar la costa donde estamos hoy; el día que la dejamos (van a GDL el 8, vuelo a CDMX el 17) seguimos
+        // vigilándola, y tierra adentro, la próxima parada en la costa
+        const prev = DAYS[dayIndex - 1]
+        const leaving = prev && coastal(prev.city) && !coastal(day.city) && day.items.some((it) => it.type === 'move' || it.type === 'fly')
+        const coast: Spot = coastal(day.city)
+          ? place
+          : leaving
+            ? spotOf(prev)
+            : CITIES[STOPS.find((s) => coastal(s.city) && s.to > day.date)?.city ?? day.city]
         return <StormBanner lat={coast.lat} lon={coast.lon} place={coast.short} />
       })()}
 
@@ -131,14 +166,14 @@ export default function Home({ go }: { go: Go }) {
         <div className="row between">
           <div className="col" style={{ gap: 0 }}>
             <span className="label" style={{ color: cityVar(day.city) }}>
-              {phase === 'before' ? 'Primer día' : 'Hoy'} · {city.short}
+              {phase === 'before' || phase === 'enVuelo' ? 'Primer día' : 'Hoy'} · {city.short}
             </span>
             <h3>{day.title}</h3>
           </div>
         </div>
         <div className="col" style={{ gap: 7 }}>
           {day.items.slice(0, 6).map((it) => {
-            const isNext = phase === 'during' && it.id === nextItemId(day.items, now, city.tz)
+            const isNext = phase === 'during' && it.id === nextItemId(day.items, now, place.tz)
             return (
               <div key={it.id} className="row small" style={{ alignItems: 'baseline', fontWeight: isNext ? 700 : undefined }}>
                 <span className="num" style={{ width: 52, flex: 'none', fontWeight: 700, fontSize: 12, color: isNext ? 'var(--rosa)' : 'var(--muted)' }}>
@@ -170,7 +205,7 @@ export default function Home({ go }: { go: Go }) {
         </section>
       )}
 
-      <Weather city={day.city} />
+      <Weather city={place} />
 
       <div className="grid2">
         <button className="card col" style={{ textAlign: 'left', gap: 2 }} onClick={() => go('plata')}>
@@ -211,8 +246,8 @@ export default function Home({ go }: { go: Go }) {
   )
 }
 
-function Weather({ city: id }: { city: keyof typeof CITIES }) {
-  const city = CITIES[id]
+/** Clima del lugar concreto de hoy (en Baja: La Paz o San José del Cabo según el día) */
+function Weather({ city }: { city: Spot }) {
   const w = useWeather(city.lat, city.lon, city.tz)
   return (
     <section className="card col" style={{ gap: 10 }}>
@@ -268,7 +303,7 @@ function Converter() {
 
 /** Primera actividad con hora (HH:MM) que aún no pasó, en la hora local de la ciudad */
 function nextItemId(items: { id: string; time?: string }[], now: number, tz: string) {
-  const hm = new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(now))
+  const hm = hhmm(now, tz)
   return items.find((it) => it.time && /^\d{2}:\d{2}/.test(it.time) && it.time.slice(0, 5) >= hm)?.id
 }
 

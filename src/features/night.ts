@@ -1,20 +1,24 @@
-import { DAYS } from '../data/trip'
-import { todayIn } from '../lib/time'
+import { DAYS, TRIP_TZ, tripTz, todayOnTrip, tzOfDay } from '../data/trip'
+import { addDays, hourIn, todayIn } from '../lib/time'
 
-const TZ = 'America/Mexico_City'
+export { hourIn }
 
-/** Hora local (0–23) en CDMX */
-export function hourIn(now: number, tz = TZ) {
-  return Number(new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour: '2-digit', hourCycle: 'h23' }).format(new Date(now)))
+/** Clave de la noche (para "¿Llegaste bien?"): de 00:00 a 11:59 hora local cuenta como la noche anterior */
+export function nightKey(now: number) {
+  const tz = tripTz(now)
+  const today = todayIn(tz, now)
+  return hourIn(now, tz) >= 12 ? today : addDays(today, -1)
 }
 
-/** Clave de la noche: de 00:00 a 11:59 cuenta como la noche anterior */
-export function nightKey(now: number) {
-  const today = todayIn(TZ, now)
-  if (hourIn(now) >= 12) return today
-  const [y, m, d] = today.split('-').map(Number)
-  const prev = new Date(Date.UTC(y, m - 1, d - 1))
-  return prev.toISOString().slice(0, 10)
+/**
+ * Día del itinerario cuyo alojamiento toca mostrar al taxista: desde las ~06:00 (hora local del destino)
+ * ya vale el de hoy, aunque lleguemos por la mañana (van a GDL el 8, vuelo a CDMX el 17).
+ */
+export function stayKey(now: number) {
+  const today = todayOnTrip(now)
+  const day = dayOf(today)
+  const tz = day ? tzOfDay(day) : TRIP_TZ
+  return hourIn(now, tz) >= 6 ? today : addDays(today, -1)
 }
 
 /** Día del itinerario para una fecha (o null si está fuera del viaje) */
