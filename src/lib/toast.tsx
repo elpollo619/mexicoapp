@@ -29,8 +29,8 @@ export function toast(text: string, ms: number | ToastOptions = 2200, opts: Toas
   }, delay)
 }
 
-/** Cierra el aviso actual (útil tras una acción) */
-export function dismissToast() {
+/** Cierra el aviso actual (tras tocar su botón) */
+function dismissToast() {
   clearTimeout(timer)
   current = null
   emit()
