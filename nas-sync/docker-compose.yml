@@ -15,7 +15,9 @@ services:
       - TZ=Europe/Zurich
     volumes:
       - /volume1/Fotos/Mexico 2026:/data
-    # Script fijado a un commit concreto del repo (no cambia solo)
+    # Script fijado a un commit concreto del repo (no cambia solo).
+    # Al cambiar nas-sync/sync.mjs, actualizar el SHA de la URL al del último commit que toque nas-sync/
+    # (git log -1 --format=%H -- nas-sync/) y volver a crear el proyecto en UGOS.
     command:
       - sh
       - -c
