@@ -1,6 +1,14 @@
 import { useEffect, useRef, type ReactNode } from 'react'
 import { person, PEOPLE } from '../data/people'
+import { avatarSrc } from '../data/avatars'
 import Luchador from './Luchador'
+
+/** Imagen anime de la persona, o su máscara de luchador si no tiene */
+export function Face({ id, size }: { id: string; size: number }) {
+  const src = avatarSrc(id)
+  if (!src) return <Luchador id={id} size={size} />
+  return <img src={src} alt="" width={size} height={size} draggable={false} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+}
 
 export function Avatar({ id, lg, size }: { id: string; lg?: boolean; size?: number }) {
   const p = person(id)
@@ -11,7 +19,7 @@ export function Avatar({ id, lg, size }: { id: string; lg?: boolean; size?: numb
       style={{ background: p.color, overflow: 'hidden', ...(size ? { width: size, height: size } : {}) }}
       title={`${p.name} · ${p.nickname}`}
     >
-      <Luchador id={id} size={px} />
+      <Face id={id} size={px} />
     </span>
   )
 }
