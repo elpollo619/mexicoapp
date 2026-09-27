@@ -18,6 +18,7 @@ import WhereCard from '../features/where/WhereCard'
 import Tomorrow from '../features/Tomorrow'
 import StormBanner from '../features/storm/StormBanner'
 import { DriverCardButton } from '../features/DriverCard'
+import PabloDay, { PabloTeaser } from '../features/birthday/PabloDay'
 
 const DEPARTURE = zoned('2026-10-02T15:35', 'Europe/Zurich')
 const FIRST = DAYS[1].date
@@ -119,6 +120,9 @@ export default function Home({ go }: { go: Go }) {
         )}
         {phase === 'after' && <span className="big">¡Qué viaje! 🥹</span>}
       </section>
+
+      <PabloTeaser now={now} />
+      <PabloDay now={now} />
 
       {(() => {
         // Vigilar la costa donde estamos hoy; el día que la dejamos (van a GDL el 8, vuelo a CDMX el 17) seguimos
