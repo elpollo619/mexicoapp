@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Pencil } from 'lucide-react'
 import { ALL, CORE, person } from '../../data/people'
-import { balances, CATEGORIES, fmt, fromCHF, parseAmount, type Expense, type Settlement } from '../../lib/money'
+import { balances, CATEGORIES, fmt, fromCHF, KITTY_CATEGORY, kittyAsExpenses, parseAmount, type Expense, type KittyData, type Settlement } from '../../lib/money'
 import { put, useItems } from '../../lib/store'
 import { todayIn, useNow } from '../../lib/time'
 import { toast } from '../../lib/toast'
@@ -109,7 +109,9 @@ function PlanBars({ rows }: { rows: { key: string; label: string; spent: number;
 
 export default function BudgetView({ me }: { me: string }) {
   const now = useNow(60_000)
-  const expenses = useItems<Expense>('expense').map((e) => e.data)
+  const kitty = useItems<KittyData>('kitty').map((k) => k.data)
+  // Los aportes a la vaquita cuentan como gasto entre los 6 (categoría 'vaquita'); ver kittyAsExpenses
+  const expenses = [...useItems<Expense>('expense').map((e) => e.data), ...kittyAsExpenses(kitty)]
   const settlements = useItems<Settlement>('settlement').map((s) => s.data)
   const budgets = useItems<Budget>('budget')
   const [scope, setScope] = useState<'yo' | 'grupo'>('yo')
@@ -173,7 +175,8 @@ export default function BudgetView({ me }: { me: string }) {
 
   // El plan por categoría se escala al presupuesto real (1.550 = plan completo)
   const planMult = budget / DEFAULT_BUDGET
-  const byCat = CATEGORIES.filter((c) => withFlights || c.id !== 'vuelo')
+  const byCat = [...CATEGORIES, KITTY_CATEGORY]
+    .filter((c) => withFlights || c.id !== 'vuelo')
     .map((c) => ({
       key: c.id,
       label: `${c.emoji} ${c.label}`,
