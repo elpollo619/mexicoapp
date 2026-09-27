@@ -376,3 +376,7 @@ img.photoimg { outline: 1px solid rgba(0, 0, 0, 0.1); outline-offset: -1px; }
 /* Dónde estamos */
 .where .where-row { padding: 6px 8px; border-radius: 12px; background: var(--chip); min-height: 44px; }
 .where .where-row:active { opacity: 0.8; }
+
+/* Menú "añadir al calendario" */
+.cal-menu { position: absolute; top: calc(100% + 6px); z-index: 41; min-width: 220px; padding: 8px; gap: 6px; box-shadow: var(--shadow-2); }
+.cal-menu .btn { justify-content: flex-start; width: 100%; }

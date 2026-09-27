@@ -15,6 +15,7 @@ import { CHECKLIST } from '../data/info'
 import { FlightPass } from './Flights'
 import SafeHome from '../features/SafeHome'
 import WhereCard from '../features/where/WhereCard'
+import Tomorrow from '../features/Tomorrow'
 import StormBanner from '../features/storm/StormBanner'
 import { DriverCardButton } from '../features/DriverCard'
 
@@ -192,6 +193,7 @@ export default function Home({ go }: { go: Go }) {
       </section>
 
       {phase === 'during' && <DriverCardButton />}
+      {phase === 'during' && <Tomorrow now={now} go={go} />}
       {phase === 'during' && <SafeHome />}
       <WhereCard now={now} go={go} />
 
