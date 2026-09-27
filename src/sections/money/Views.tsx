@@ -1,13 +1,14 @@
 import { useState } from 'react'
 import { ArrowLeftRight, ArrowRight, Check, Pencil, Trash2, Undo2 } from 'lucide-react'
 import { CORE, person } from '../../data/people'
-import { CATEGORIES, fmt, fromCHF, parseAmount, settleUp, toCHF, type Expense, type Settlement } from '../../lib/money'
+import { CATEGORIES, fmt, fromCHF, KITTY_CATEGORY, parseAmount, settleUp, toCHF, type Expense, type Settlement } from '../../lib/money'
 import { put, remove, type Item } from '../../lib/store'
 import { Avatar, Avatars, buzz, name } from '../../components/ui'
 import { toast } from '../../lib/toast'
 import { todayIn } from '../../lib/time'
 
-export const catOf = (id: string) => CATEGORIES.find((c) => c.id === id) ?? CATEGORIES[CATEGORIES.length - 1]
+/** Incluye 'vaquita' (gastos sintéticos de los aportes), que no se elige en el formulario */
+export const catOf = (id: string) => (id === KITTY_CATEGORY.id ? KITTY_CATEGORY : (CATEGORIES.find((c) => c.id === id) ?? CATEGORIES[CATEGORIES.length - 1]))
 
 const dayLabel = (d: string) => {
   const dt = new Date(`${d}T12:00:00`)
