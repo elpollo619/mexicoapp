@@ -38,12 +38,17 @@ export function tripWindow(p: Person): { from: string; to: string } {
   return { from: p.from ?? TRIP_FROM, to: TRIP_TO }
 }
 
-/** Quiénes están en el viaje ese día (YYYY-MM-DD): para repartos por defecto, votaciones y "¿llegaste bien?" */
-export const presentOn = (date: string) =>
-  PEOPLE.filter((p) => {
+/**
+ * Quiénes están en el viaje ese día (YYYY-MM-DD): para repartos por defecto, votaciones y "¿llegaste bien?".
+ * Fuera del viaje (vuelos comprados antes, cuentas después) vale el grupo base.
+ */
+export const presentOn = (date: string) => {
+  if (date < TRIP_FROM || date > TRIP_TO) return CORE
+  return PEOPLE.filter((p) => {
     const w = tripWindow(p)
     return date >= w.from && date <= w.to
   }).map((p) => p.id)
+}
 
 /** Quiénes están en cada parada (la primera estancia en CDMX es solo el grupo base) */
 export const presentIn = (city?: string) =>
