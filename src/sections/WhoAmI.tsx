@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Lock, RefreshCw, WifiOff } from 'lucide-react'
-import { PEOPLE, person } from '../data/people'
+import { PEOPLE, person, joinLabel } from '../data/people'
 import { hashPin, setMe, useMe, type Profile } from '../lib/me'
 import { put, retry, useItems, useSyncStatus } from '../lib/store'
 import { readInvite } from '../lib/install'
@@ -113,10 +113,8 @@ export default function WhoAmI({ onDone }: { onDone: () => void }) {
                           <>
                             <Lock size={10} /> con PIN
                           </>
-                        ) : p.gdlOnly ? (
-                          'Guadalajara · nuevo'
                         ) : (
-                          'Nuevo'
+                          joinLabel(p)
                         )}
                       </span>
                     </span>

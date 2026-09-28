@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Pencil } from 'lucide-react'
-import { ALL, CORE, person } from '../../data/people'
+import { ALL, CORE, person, tripWindow } from '../../data/people'
 import { balances, CATEGORIES, fmt, fromCHF, KITTY_CATEGORY, kittyAsExpenses, parseAmount, type Expense, type KittyData, type Settlement } from '../../lib/money'
 import { put, useItems } from '../../lib/store'
 import { todayIn, useNow } from '../../lib/time'
@@ -128,11 +128,12 @@ export default function BudgetView({ me }: { me: string }) {
   const pre = counted.filter((e) => e.date < TRIP_START).reduce((a, e) => a + shareFor(e), 0)
   const during = spent - pre
 
-  // Pablo e invitad@ solo están en Guadalajara (8–11 oct): su viaje dura 4 días
+  // Quien no hace el viaje entero (Pablo e invitad@ solo GDL, Gracia desde el 6) tiene su propia ventana
   const gdlOnlyMe = scope === 'yo' && !CORE.includes(me)
-  const start = gdlOnlyMe ? '2026-10-08' : TRIP_START
-  const end = gdlOnlyMe ? '2026-10-11' : TRIP_END
-  const tripDays = gdlOnlyMe ? 4 : TRIP_DAYS
+  const win = tripWindow(person(me))
+  const start = gdlOnlyMe ? win.from : TRIP_START
+  const end = gdlOnlyMe ? win.to : TRIP_END
+  const tripDays = gdlOnlyMe ? Math.round((Date.parse(win.to) - Date.parse(win.from)) / 86400000) + 1 : TRIP_DAYS
 
   // Ritmo (hora de Ciudad de México)
   const today = todayIn('America/Mexico_City', now)

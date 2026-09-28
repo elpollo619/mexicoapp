@@ -1,5 +1,5 @@
 import { Home as HomeIcon, MessageCircle, Undo2 } from 'lucide-react'
-import { CORE } from '../data/people'
+import { presentOn } from '../data/people'
 import { tripTz } from '../data/trip'
 import { useMe } from '../lib/me'
 import { put, remove, useItems } from '../lib/store'
@@ -10,11 +10,8 @@ import { hourIn, nightKey } from './night'
 
 type HomeNote = { night: string; person: string; at: string }
 
-/** Quién está esa noche: los 6 siempre; Pablo y su invitad@ solo en Guadalajara (8–11 oct) */
-function peopleOn(night: string) {
-  const gdl = night >= '2026-10-08' && night <= '2026-10-11'
-  return gdl ? [...CORE, 'pablo', 'invitado'] : CORE
-}
+/** Quién está esa noche (Gracia desde el 6; Pablo y su invitad@ solo en Guadalajara) */
+const peopleOn = (night: string) => presentOn(night)
 
 export default function SafeHome() {
   const me = useMe()!

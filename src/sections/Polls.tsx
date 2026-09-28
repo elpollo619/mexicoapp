@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Check, ExternalLink, Lock, LockOpen, Plus, Trash2, Trophy, X } from 'lucide-react'
-import { CORE } from '../data/people'
+import { presentIn } from '../data/people'
 import { put, remove, uid, useItems, type Item } from '../lib/store'
 import { useMe } from '../lib/me'
 import { Avatars, buzz, name, Sheet } from '../components/ui'
@@ -71,7 +71,7 @@ function PollCard({ poll, votes, me }: { poll: Item<Poll>; votes: Item<Vote>[]; 
   const counts = Object.fromEntries(p.options.map((o) => [o.id, votes.filter((v) => v.data.options.includes(o.id))]))
   const max = Math.max(0, ...p.options.map((o) => counts[o.id].length))
   const voters = new Set(votes.map((v) => v.data.person))
-  const expected = p.city === 'gdl' ? [...CORE, 'pablo', 'invitado'] : CORE
+  const expected = presentIn(p.city)
   const missing = expected.filter((x) => !voters.has(x))
   const canManage = !p.by || p.by === me
 

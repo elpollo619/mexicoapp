@@ -28,10 +28,10 @@ export const CITIES: Record<CityId, City> = {
 /** Paradas en orden (para mapa y resumen) */
 export const STOPS: { city: CityId; from: string; to: string; nights: number; people: number }[] = [
   { city: 'cdmx', from: '2026-10-03', to: '2026-10-06', nights: 3, people: 6 },
-  { city: 'pvr', from: '2026-10-06', to: '2026-10-08', nights: 2, people: 6 },
-  { city: 'gdl', from: '2026-10-08', to: '2026-10-12', nights: 4, people: 8 },
-  { city: 'baja', from: '2026-10-12', to: '2026-10-17', nights: 5, people: 6 },
-  { city: 'cdmx', from: '2026-10-17', to: '2026-10-18', nights: 1, people: 6 },
+  { city: 'pvr', from: '2026-10-06', to: '2026-10-08', nights: 2, people: 7 },
+  { city: 'gdl', from: '2026-10-08', to: '2026-10-12', nights: 4, people: 9 },
+  { city: 'baja', from: '2026-10-12', to: '2026-10-17', nights: 5, people: 7 },
+  { city: 'cdmx', from: '2026-10-17', to: '2026-10-18', nights: 1, people: 7 },
 ]
 
 /** Lugar concreto (coordenadas y zona) para clima, huracanes y hora local */
