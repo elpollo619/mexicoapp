@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
-import { Compass, Home as HomeIcon, LifeBuoy, Users, Wallet } from 'lucide-react'
+import { Camera, Compass, Home as HomeIcon, LifeBuoy, Users, Wallet } from 'lucide-react'
 import { useMe } from './lib/me'
 import { useItems, useSyncStatus } from './lib/store'
 import { Toaster } from './lib/toast'
@@ -15,9 +15,10 @@ import { GROUP_VIEWS, INFO_VIEWS } from './sections/views'
 // Se cargan al abrir la pestaña (primera carga más rápida con datos móviles)
 const Money = lazy(() => import('./sections/Money'))
 const Group = lazy(() => import('./sections/Group'))
+const Photos = lazy(() => import('./sections/Photos'))
 const Info = lazy(() => import('./sections/Info'))
 
-export type Tab = 'hoy' | 'viaje' | 'plata' | 'grupo' | 'info'
+export type Tab = 'hoy' | 'viaje' | 'plata' | 'fotos' | 'grupo' | 'info'
 /** Destino de navegación: pestaña + (opcional) sub-vista */
 export type Go = (t: Tab, sub?: string) => void
 
@@ -25,6 +26,7 @@ const TABS: { id: Tab; label: string; icon: typeof HomeIcon }[] = [
   { id: 'hoy', label: 'Hoy', icon: HomeIcon },
   { id: 'viaje', label: 'Viaje', icon: Compass },
   { id: 'plata', label: 'Plata', icon: Wallet },
+  { id: 'fotos', label: 'Fotos', icon: Camera },
   { id: 'grupo', label: 'Grupo', icon: Users },
   { id: 'info', label: 'Info', icon: LifeBuoy },
 ]
@@ -33,12 +35,14 @@ const TITLES: Record<Tab, string> = {
   hoy: 'México Lindo',
   viaje: 'El viaje',
   plata: 'Plata',
+  fotos: 'Fotos del viaje',
   grupo: 'El grupo',
   info: 'Info práctica',
 }
 
-// Enlaces viejos (#plan, #vuelos, #votar, #juegos) siguen funcionando
+// Enlaces viejos (#plan, #vuelos, #votar, #juegos, #grupo/fotos) siguen funcionando
 const LEGACY: Record<string, [Tab, string?]> = {
+  'grupo/fotos': ['fotos'],
   plan: ['viaje', 'dia'],
   vuelos: ['viaje', 'vuelos'],
   votar: ['grupo', 'votar'],
@@ -46,7 +50,9 @@ const LEGACY: Record<string, [Tab, string?]> = {
 }
 
 function readHash(): [Tab, string | undefined] {
-  const [h, sub] = location.hash.replace('#', '').split('/')
+  const path = location.hash.replace('#', '')
+  if (LEGACY[path]) return [LEGACY[path][0], LEGACY[path][1]]
+  const [h, sub] = path.split('/')
   if (LEGACY[h]) return [LEGACY[h][0], LEGACY[h][1]]
   return TABS.some((t) => t.id === h) ? [h as Tab, sub] : ['hoy', undefined]
 }
@@ -131,6 +137,7 @@ export default function App() {
           {tab === 'hoy' && <Home go={go} />}
           {tab === 'viaje' && <Itinerary view={pick(sub, TRIP_VIEWS, 'dia')} onView={(v) => go('viaje', v)} />}
           {tab === 'plata' && <Money />}
+          {tab === 'fotos' && <Photos />}
           {tab === 'grupo' && <Group view={pick(sub, GROUP_VIEWS, 'votar')} onView={(v) => go('grupo', v)} />}
           {tab === 'info' && <Info view={pick(sub, INFO_VIEWS, 'moverse')} onView={(v) => go('info', v)} />}
         </Suspense>

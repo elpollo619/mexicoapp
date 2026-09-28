@@ -98,12 +98,12 @@ export default function Photos() {
     <>
       <div className="card row" style={{ gap: 12 }}>
         <div className="grow col" style={{ gap: 2 }}>
-          <h3>Álbum del grupo</h3>
+          <h3>Fotos del viaje</h3>
           <span className="small muted">
-            {photos.length} foto{photos.length === 1 ? '' : 's'} · todos las ven al instante
+            {photos.length ? `${photos.length} foto${photos.length === 1 ? '' : 's'} · ` : ''}Súbelas aquí, todos las ven al instante y quedan guardadas en el NAS de Cris.
           </span>
         </div>
-        <button className="btn primary" onClick={() => input.current?.click()} disabled={!!progress} aria-live="polite">
+        <button className="btn primary" style={{ minHeight: 48, padding: '0 18px', fontSize: 16 }} onClick={() => input.current?.click()} disabled={!!progress} aria-live="polite">
           <Camera size={18} /> {progress ? (progress.n > 1 ? `Subiendo ${progress.i} de ${progress.n}…` : 'Subiendo…') : 'Subir'}
         </button>
         <input ref={input} type="file" accept="image/*" multiple hidden onChange={(e) => upload(e.target.files)} />
@@ -113,7 +113,7 @@ export default function Photos() {
         <div className="empty">
           <span className="e-ic">📷</span>
           <b>Todavía no hay fotos</b>
-          <span className="small">Suban las mejores del día: el taco, el atardecer, Pablo bailando…</span>
+          <span className="small">Toca «Subir» y elige una o varias del carrete. Suban las mejores del día: el taco, el atardecer, Pablo bailando…</span>
         </div>
       )}
 
