@@ -21,4 +21,4 @@ services:
     command:
       - sh
       - -c
-      - wget -qO /tmp/sync.mjs https://raw.githubusercontent.com/elpollo619/mexicoapp/dce1794b82662bf203f7f330e0c7996887792a43/nas-sync/sync.mjs && node /tmp/sync.mjs
+      - wget -qO /tmp/sync.mjs https://raw.githubusercontent.com/elpollo619/mexicoapp/cbbbd37ed57e10864df96d07bcafed1913be41fc/nas-sync/sync.mjs && node /tmp/sync.mjs
