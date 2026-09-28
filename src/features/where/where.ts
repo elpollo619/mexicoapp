@@ -118,3 +118,10 @@ export function distLabel(a: Where, b: Where) {
 }
 
 export const directions = (w: Where) => `https://www.google.com/maps/dir/?api=1&destination=${w.lat},${w.lon}&travelmode=walking`
+
+/** Abre WhatsApp con tu última ubicación: link que abre en Google Maps o Apple Maps, tenga o no la app */
+export function whatsappUrl(w: Where) {
+  const hm = new Intl.DateTimeFormat('es-MX', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(w.at))
+  const text = `📍 Aquí estoy: https://maps.google.com/?q=${w.lat},${w.lon}\n(a las ${hm}, ±${w.acc} m) — México Lindo 🇲🇽`
+  return `https://wa.me/?text=${encodeURIComponent(text)}`
+}
