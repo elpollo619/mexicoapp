@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { KeyRound, Link2, LogOut, Smartphone } from 'lucide-react'
+import { KeyRound, Link2, LogOut, Smartphone, Sparkles } from 'lucide-react'
 import { PEOPLE, person } from '../data/people'
 import { hashPin, isAdmin, setMe, type Profile } from '../lib/me'
 import { put, remove, useItems } from '../lib/store'
@@ -11,7 +11,7 @@ import PinPad from './PinPad'
 
 type View = 'main' | 'install' | { pin: 'new' | 'confirm'; first?: string }
 
-export default function ProfileSheet({ me, open, onClose }: { me: string; open: boolean; onClose: () => void }) {
+export default function ProfileSheet({ me, open, onClose, onOnboarding }: { me: string; open: boolean; onClose: () => void; onOnboarding?: () => void }) {
   const profiles = useItems<Profile>('profile')
   const [view, setView] = useState<View>('main')
   const [confirm, setConfirm] = useState<string | null>(null)
@@ -94,6 +94,11 @@ export default function ProfileSheet({ me, open, onClose }: { me: string; open: 
           <button className="btn outline block" style={{ justifyContent: 'flex-start' }} onClick={() => setView({ pin: 'new' })}>
             <KeyRound size={18} /> Cambiar mi PIN
           </button>
+          {onOnboarding && (
+            <button className="btn outline block" style={{ justifyContent: 'flex-start' }} onClick={onOnboarding}>
+              <Sparkles size={18} /> Ver la bienvenida de nuevo
+            </button>
+          )}
           <button
             className="btn block"
             onClick={() => {
