@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Camera, Minus, Plus, RotateCw, X } from 'lucide-react'
-import { ALL, CORE } from '../../data/people'
+import { ALL, presentOn } from '../../data/people'
 import { CATEGORIES, CURRENCIES, fmt, fromCHF, parseAmount, toCHF, type Currency, type Expense } from '../../lib/money'
 import { put, uid, uploadImage } from '../../lib/store'
 import { buzz, name, PeoplePicker } from '../../components/ui'
@@ -41,11 +41,11 @@ const UPLOAD_MSG = {
 
 const sameSet = (a: string[], b: string[]) => a.length === b.length && a.every((x) => b.includes(x))
 
-function initialMode(shares: Record<string, number>): Mode {
+function initialMode(shares: Record<string, number>, date: string): Mode {
   const ids = Object.keys(shares)
   const allOnes = Object.values(shares).every((v) => v === 1)
   if (!allOnes) return 'parts'
-  if (sameSet(ids, CORE)) return 'core'
+  if (sameSet(ids, presentOn(date))) return 'core'
   if (sameSet(ids, ALL)) return 'all'
   return 'custom'
 }
@@ -58,11 +58,11 @@ export default function ExpenseForm({ me, edit, onDone }: { me: string; edit?: {
   const [payer, setPayer] = useState(e?.payer ?? me)
   const [category, setCategory] = useState(e?.category ?? remembered(LAST_CAT, CATEGORIES.map((c) => c.id), 'comida'))
   const [date, setDate] = useState(e?.date ?? today())
-  const [mode, setMode] = useState<Mode>(e ? initialMode(e.shares) : 'core')
-  const [custom, setCustom] = useState<string[]>(e ? Object.keys(e.shares) : CORE)
+  const [mode, setMode] = useState<Mode>(e ? initialMode(e.shares, e.date) : 'core')
+  const [custom, setCustom] = useState<string[]>(e ? Object.keys(e.shares) : presentOn(date))
   const [parts, setParts] = useState<Record<string, number>>(() => {
     const base = Object.fromEntries(ALL.map((p) => [p, 0]))
-    return e ? { ...base, ...e.shares } : { ...base, ...Object.fromEntries(CORE.map((p) => [p, 1])) }
+    return e ? { ...base, ...e.shares } : { ...base, ...Object.fromEntries(presentOn(date).map((p) => [p, 1])) }
   })
   const [receipt, setReceipt] = useState<Receipt | undefined>(e?.receipt ? { url: e.receipt, thumb: e.thumb } : undefined)
   const [uploading, setUploading] = useState(false)
@@ -78,9 +78,11 @@ export default function ExpenseForm({ me, edit, onDone }: { me: string; edit?: {
   const dateOk = DATE_RE.test(date)
   const valid = title.trim().length > 0 && Number.isFinite(amount) && amount > 0 && dateOk
 
+  // "Los N" = quienes están en el viaje en la fecha del gasto (Gracia desde el 6; Pablo e invitad@ solo en GDL)
+  const present = presentOn(dateOk ? date : today())
   const shares: Record<string, number> =
     mode === 'core'
-      ? Object.fromEntries(CORE.map((p) => [p, 1]))
+      ? Object.fromEntries(present.map((p) => [p, 1]))
       : mode === 'all'
         ? Object.fromEntries(ALL.map((p) => [p, 1]))
         : mode === 'custom'
@@ -185,10 +187,10 @@ export default function ExpenseForm({ me, edit, onDone }: { me: string; edit?: {
         Entre quiénes
         <div className="seg">
           <button type="button" className={mode === 'core' ? 'on' : ''} onClick={() => setMode('core')}>
-            Los 6
+            Los {present.length}
           </button>
           <button type="button" className={mode === 'all' ? 'on' : ''} onClick={() => setMode('all')}>
-            + GDL (8)
+            Todos ({ALL.length})
           </button>
           <button type="button" className={mode === 'custom' ? 'on' : ''} onClick={() => setMode('custom')}>
             Elegir
