@@ -115,7 +115,8 @@ export default function App() {
       <WhoAmI
         onDone={() => {
           go('hoy')
-          maybeOnboard()
+          // Un instante después: que el toque que creó el PIN no caiga sobre la hoja de bienvenida
+          setTimeout(maybeOnboard, 250)
         }}
       />
       <Toaster />
@@ -171,7 +172,7 @@ export default function App() {
           ))}
         </div>
       </nav>
-      <ProfileSheet me={me} open={profile} onClose={() => setProfile(false)} onOnboarding={() => { setProfile(false); setOnboard(true) }} />
+      <ProfileSheet me={me} open={profile} onClose={() => setProfile(false)} onOnboarding={() => { setProfile(false); setTimeout(() => setOnboard(true), 250) }} />
       <Onboarding open={onboard} onClose={() => setOnboard(false)} />
       <Toaster />
     </div>
