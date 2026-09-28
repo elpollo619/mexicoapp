@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Camera, Share2, Trash2 } from 'lucide-react'
 import { CITIES, DAYS } from '../data/trip'
-import { useMe } from '../lib/me'
+import { isAdmin, useMe } from '../lib/me'
 import { put, remove, uid, uploadImage, useItems, type Item } from '../lib/store'
 import { toast } from '../lib/toast'
 import { longDate, todayIn } from '../lib/time'
@@ -197,7 +197,7 @@ export default function Photos() {
               >
                 {sharing ? <span className="spinner" style={{ width: 18, height: 18, borderWidth: 2 }} aria-hidden /> : <Share2 size={18} />}
               </button>
-              {open.data.by === me &&
+              {(open.data.by === me || isAdmin(me)) &&
                 (confirm ? (
                   <button
                     className="btn small"

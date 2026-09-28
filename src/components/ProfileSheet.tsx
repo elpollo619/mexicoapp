@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { KeyRound, Link2, LogOut, Smartphone } from 'lucide-react'
 import { PEOPLE, person } from '../data/people'
-import { hashPin, setMe, type Profile } from '../lib/me'
+import { hashPin, isAdmin, setMe, type Profile } from '../lib/me'
 import { put, remove, useItems } from '../lib/store'
 import { shareApp } from '../lib/install'
 import { toast } from '../lib/toast'
@@ -80,6 +80,11 @@ export default function ProfileSheet({ me, open, onClose }: { me: string; open: 
                 {p.nickname}
               </span>
               <span className="tiny muted">{p.tagline}</span>
+              {isAdmin(me) && (
+                <span className="tag ok" style={{ marginTop: 6, alignSelf: 'flex-start' }}>
+                  admin · puedes borrar cualquier gasto, foto o encuesta
+                </span>
+              )}
             </div>
           </div>
 
