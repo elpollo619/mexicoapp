@@ -4,7 +4,7 @@ import type { Go } from '../App'
 import { CITIES, DAYS, STOPS, spotOf, todayOnTrip, tripTz, type Spot } from '../data/trip'
 import { CITY_PHOTO, DAY_PHOTO, photo } from '../data/photos'
 import { useMe } from '../lib/me'
-import { balances, fmt, fromCHF, useRates, type Expense, type Settlement } from '../lib/money'
+import { balances, fmt, fromCHF, kittyAsExpenses, useRates, type Expense, type KittyData, type Settlement } from '../lib/money'
 import { useItems } from '../lib/store'
 import { countdown, dayParts, hhmm, longDate, useNow, zoned } from '../lib/time'
 import { weatherIcon, useWeather } from '../lib/weather'
@@ -15,8 +15,10 @@ import { CHECKLIST } from '../data/info'
 import { FlightPass } from './Flights'
 import SafeHome from '../features/SafeHome'
 import WhereCard from '../features/where/WhereCard'
+import Tomorrow from '../features/Tomorrow'
 import StormBanner from '../features/storm/StormBanner'
 import { DriverCardButton } from '../features/DriverCard'
+import PabloDay, { PabloTeaser } from '../features/birthday/PabloDay'
 
 const DEPARTURE = zoned('2026-10-02T15:35', 'Europe/Zurich')
 const FIRST = DAYS[1].date
@@ -52,7 +54,8 @@ export default function Home({ go }: { go: Go }) {
     flights.find((f) => hasTime(f) && arrEpoch(f) > now && f.who.includes(me)) ?? flights.find((f) => hasTime(f) && arrEpoch(f) > now)
   const airborne = flights.find((f) => inFlight(f, now)) ?? flights.find((f) => hasTime(f) && arrEpoch(f) > now)
   const landing = airborne ? countdown(arrEpoch(airborne) - now) : null
-  const expenses = useItems<Expense>('expense').map((i) => i.data)
+  // Los aportes a la vaquita entran como gasto entre los 6, igual que en la pestaña Plata
+  const expenses = [...useItems<Expense>('expense').map((i) => i.data), ...kittyAsExpenses(useItems<KittyData>('kitty').map((i) => i.data))]
   const settlements = useItems<Settlement>('settlement').map((i) => i.data)
   const myBal = balances(expenses, settlements)[me] ?? 0
   const dayIndex = DAYS.findIndex((d) => d.date === day.date)
@@ -118,6 +121,9 @@ export default function Home({ go }: { go: Go }) {
         )}
         {phase === 'after' && <span className="big">¡Qué viaje! 🥹</span>}
       </section>
+
+      <PabloTeaser now={now} />
+      <PabloDay now={now} />
 
       {(() => {
         // Vigilar la costa donde estamos hoy; el día que la dejamos (van a GDL el 8, vuelo a CDMX el 17) seguimos
@@ -192,6 +198,7 @@ export default function Home({ go }: { go: Go }) {
       </section>
 
       {phase === 'during' && <DriverCardButton />}
+      {phase === 'during' && <Tomorrow now={now} go={go} />}
       {phase === 'during' && <SafeHome />}
       <WhereCard now={now} go={go} />
 

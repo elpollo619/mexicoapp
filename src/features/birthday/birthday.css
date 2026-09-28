@@ -1,0 +1,41 @@
+/* ---------- Modo Pablo (cumple, 12 oct) ---------- */
+.bday {
+  position: relative; overflow: hidden; width: 100%; text-align: left;
+  background: linear-gradient(135deg, var(--rosa-soft), var(--cempa-soft)); border-color: transparent; box-shadow: none;
+}
+.bday-title { font-family: 'Bricolage Grotesque', Inter, sans-serif; font-weight: 800; font-size: 27px; line-height: 1.05; letter-spacing: -0.02em; text-wrap: balance; }
+.bday-cake { font-size: 44px; line-height: 1; animation: bday-bounce 1.4s ease-in-out infinite; }
+@keyframes bday-bounce { 0%, 100% { transform: translateY(0) rotate(-6deg); } 50% { transform: translateY(-5px) rotate(6deg); } }
+
+/* Confeti: cada trozo es un <i> con sus variables (posición, color, tamaño, duración, retraso, giro) */
+.bday-confetti { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.bday-confetti i {
+  position: absolute; top: -14px; left: var(--x); width: var(--s); height: calc(var(--s) * 1.6); background: var(--c);
+  border-radius: 2px; opacity: 0; animation: bday-fall var(--d) linear var(--delay) forwards;
+}
+.bday-confetti i:nth-child(3n) { border-radius: 50%; }
+@keyframes bday-fall {
+  0% { opacity: 1; transform: translate3d(0, 0, 0) rotate(0); }
+  80% { opacity: 1; }
+  100% { opacity: 0; transform: translate3d(var(--sway), 360px, 0) rotate(var(--r)); }
+}
+
+/* Chip de "faltan N días" (9–11 oct) */
+.bday-chip { align-self: flex-start; background: var(--cempa-soft); border-color: transparent; color: var(--ink); }
+
+/* Mensajes */
+.bday-msg { display: grid; grid-template-columns: 30px 1fr; gap: 9px; align-items: start; }
+.bday-msg p { margin: 0; font-size: 14px; text-wrap: pretty; overflow-wrap: anywhere; }
+.bday-msg .who { font-size: 12px; font-weight: 700; }
+.bday-msg .ops { display: flex; gap: 2px; }
+.bday-msg .ops button { min-width: 34px; min-height: 34px; padding: 0; display: grid; place-items: center; border-radius: 9px; }
+
+/* Contador de shots */
+.bday-shots { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; }
+.bday-total { font-size: 46px; line-height: 1; }
+.bday-plus { min-height: 64px; min-width: 120px; font-size: 22px; font-weight: 800; border-radius: 18px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .bday-confetti { display: none; }
+  .bday-cake { animation: none; }
+}

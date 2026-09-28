@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { CORE } from '../data/people'
 
 export type Currency = 'CHF' | 'MXN' | 'USD' | 'EUR'
 export const CURRENCIES: Currency[] = ['MXN', 'CHF', 'USD', 'EUR']
@@ -164,3 +165,99 @@ export const CATEGORIES = [
   { id: 'super', label: 'Súper', emoji: '🛒' },
   { id: 'otro', label: 'Otro', emoji: '🧾' },
 ]
+
+/** Categoría de los aportes a la vaquita (no se elige en el formulario de gastos: la ponen los gastos sintéticos) */
+export const KITTY_CATEGORY = { id: 'vaquita', label: 'La vaquita', emoji: '🐄' }
+
+/* ---------- La vaquita (fondo común en efectivo) ---------- */
+
+/**
+ * Movimiento de la vaquita (item `kitty:<id>`): `in` = alguien puso efectivo (by = quien puso),
+ * `out` = se pagó algo con la vaquita (by = quien pagó, title = qué). `amountMxn` manda; `chf` es la
+ * conversión del día (como en los gastos).
+ */
+export type KittyEntry = {
+  type: 'in' | 'out'
+  amountMxn: number
+  chf: number
+  by: string
+  /** Quién llevaba la vaquita al registrarlo */
+  holder?: string
+  title: string
+  date: string
+  /** Fecha y hora ISO del registro */
+  at: string
+}
+/** Item `kitty:holder`: quién lleva el efectivo ahora */
+export type KittyHolder = { holder: string }
+export type KittyData = KittyEntry | KittyHolder
+
+export const isKittyEntry = (d: KittyData): d is KittyEntry => 'type' in d && (d.type === 'in' || d.type === 'out')
+
+/**
+ * Cómo entra la vaquita en los saldos, sin contar nada dos veces:
+ * - Cada aporte (`in`) es un gasto pagado por quien puso el efectivo y repartido por igual entre los 6
+ *   (CORE), categoría 'vaquita': ese dinero es de todos y quien lo puso tiene derecho a que se lo deban.
+ * - Los gastos de la vaquita (`out`) NO tocan los saldos: el efectivo ya se contó al aportarlo. Solo
+ *   bajan el saldo del fondo y sirven para saber en qué se fue.
+ * Los gastos que devuelve son sintéticos: se calculan al vuelo y nunca se guardan.
+ * Si al final sobra efectivo y se devuelve, esa parte quedó contada de más: mejor gastarlo (ver `kittyClose`).
+ */
+export function kittyAsExpenses(items: KittyData[], among: string[] = CORE): Expense[] {
+  const shares = Object.fromEntries(among.map((p) => [p, 1]))
+  return items
+    .filter(isKittyEntry)
+    .filter((k) => k.type === 'in')
+    .map((k) => ({
+      title: k.title || 'Aporte a la vaquita',
+      amount: k.amountMxn,
+      currency: 'MXN' as const,
+      chf: k.chf,
+      payer: k.by,
+      shares,
+      category: KITTY_CATEGORY.id,
+      date: k.date,
+      by: k.by,
+    }))
+}
+
+/** Lo que entró, lo que salió y lo que queda en la vaquita (en MXN y en CHF del día de cada movimiento) */
+export function kittyTotals(items: KittyData[]) {
+  let inMxn = 0
+  let outMxn = 0
+  let inChf = 0
+  let outChf = 0
+  for (const k of items.filter(isKittyEntry)) {
+    if (k.type === 'in') {
+      inMxn += k.amountMxn
+      inChf += k.chf
+    } else {
+      outMxn += k.amountMxn
+      outChf += k.chf
+    }
+  }
+  return { inMxn, outMxn, inChf, outChf, mxn: inMxn - outMxn, chf: inChf - outChf }
+}
+
+/** Cuánto puso cada uno (MXN), de más a menos */
+export function kittyContributions(items: KittyData[]) {
+  const by: Record<string, number> = {}
+  for (const k of items.filter(isKittyEntry)) if (k.type === 'in') by[k.by] = (by[k.by] ?? 0) + k.amountMxn
+  return Object.entries(by).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+}
+
+/**
+ * Cerrar la vaquita: lo que sobra se devuelve a quienes pusieron, proporcional a lo que puso cada uno
+ * (en centavos de peso enteros, sin perder ni inventar nada). Solo calcula: no registra pagos.
+ */
+export function kittyClose(items: KittyData[]) {
+  const { mxn } = kittyTotals(items)
+  const contributions = kittyContributions(items)
+  const remaining = Math.max(0, mxn)
+  const split = splitCents(Math.round(remaining * 100), Object.fromEntries(contributions))
+  return {
+    remaining,
+    overdrawn: mxn < 0 ? -mxn : 0,
+    refunds: contributions.map(([p, put]) => ({ p, put, back: (split[p] ?? 0) / 100 })),
+  }
+}

@@ -19,3 +19,7 @@
 .card.hero .confirm-row { background: rgba(255, 255, 255, 0.14); color: #fff; }
 .card.hero .btn.ghost { background: rgba(255, 255, 255, 0.18); color: #fff; }
 .receipt-uploading { opacity: 0.5; }
+/* Cinco pestañas (con Vaquita) en un teléfono de 360 px: un poco más compactas y, si aun así no caben, con scroll */
+.seg.five { overflow-x: auto; scrollbar-width: none; }
+.seg.five::-webkit-scrollbar { display: none; }
+.seg.five button { font-size: 12px; padding: 6px 2px; letter-spacing: -0.01em; }

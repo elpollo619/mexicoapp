@@ -1,10 +1,11 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { ExternalLink, MapPin } from 'lucide-react'
-import { CITIES, DAYS, FOOD, STAYS, todayOnTrip, type Activity, type CityId } from '../data/trip'
+import { CITIES, DAYS, FOOD, STAYS, todayOnTrip, type Activity, type CityId, type Day } from '../data/trip'
 import { useMe } from '../lib/me'
 import { put, remove, useItems } from '../lib/store'
 import { dayParts, longDate, useNow } from '../lib/time'
 import { Avatars, buzz } from '../components/ui'
+import { CalendarButton } from '../components/CalendarButton'
 import Flights from './Flights'
 import { CITY_PHOTO, DAY_PHOTO, photo } from '../data/photos'
 import { currentDay } from './Home'
@@ -81,7 +82,7 @@ export default function Itinerary({ view, onView: setView }: { view: TripView; o
           <DayHeader date={day.date} />
           <div className="timeline">
             {day.items.map((it) => (
-              <Item key={it.id} it={it} />
+              <Item key={it.id} it={it} day={day} />
             ))}
           </div>
           <div className="row between">
@@ -118,7 +119,7 @@ export default function Itinerary({ view, onView: setView }: { view: TripView; o
   )
 }
 
-function Item({ it }: { it: Activity }) {
+function Item({ it, day }: { it: Activity; day: Day }) {
   const me = useMe()!
   const signups = useItems<Signup>('signup').filter((s) => s.data.item === it.id)
   const people = signups.map((s) => s.data.person)
@@ -136,6 +137,7 @@ function Item({ it }: { it: Activity }) {
       <div className="tl-body card tight col" style={{ gap: 6 }}>
         <div className="row between" style={{ alignItems: 'flex-start' }}>
           <b className="grow">{it.title}</b>
+          <CalendarButton day={day} it={it} />
           {it.maps && (
             <a href={it.maps} target="_blank" rel="noreferrer" className="iconbtn" aria-label="Abrir en Google Maps" style={{ width: 32, height: 32 }}>
               <MapPin size={16} />
