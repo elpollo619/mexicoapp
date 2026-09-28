@@ -14,15 +14,15 @@ export type Person = {
 }
 
 export const PEOPLE: Person[] = [
-  { id: 'cristian', name: 'Cristian', emoji: '🧠', color: '#e4572e', nickname: 'El Planeador', tagline: 'Hizo un PDF de 36 páginas… y una app. Nadie le pidió la app.' },
-  { id: 'bia', name: 'Bia', emoji: '🖤', color: '#8e44ad', nickname: 'La Negra Letal', tagline: 'Te saca del grupo con una sola mirada. Pregúntenle a Pipo.' },
-  { id: 'pipo', name: 'Pipo', emoji: '💪', color: '#1f8a70', nickname: 'El Contador del Narco', tagline: 'Compró el vuelo a 780… y pagó 856. Pero con estilo.' },
-  { id: 'tania', name: 'Tania', emoji: '🌺', color: '#d81b60', nickname: 'La Flor Voladora', tagline: 'Aterriza desde Punta Cana… un día después. Paga igual.' },
-  { id: 'jhoni', name: 'Jhoni', emoji: '🍸', color: '#f39c12', nickname: 'El Guía Turístico', tagline: 'Mejor que una agencia. Cobra en mezcal. Sede en Gstaad.' },
-  { id: 'nicolas', name: 'Nicolas', emoji: '🤟', color: '#2980b9', nickname: 'El Portugués Salvaje', tagline: 'Llega bien depilado y se equivoca de chat. Saludos desde Porto.' },
-  { id: 'pablo', name: 'Pablo', emoji: '🎂', color: '#c0392b', nickname: 'El Cumpleañero de Oro', tagline: 'Treinta años invicto. Bring your booze.', gdlOnly: true },
+  { id: 'cristian', name: 'Cristian', emoji: '🧠', color: '#e4572e', nickname: 'El Arquitecto del Caos', tagline: 'Hizo un PDF de 36 páginas, una app y un Excel. Nadie le pidió nada.' },
+  { id: 'bia', name: 'Bia', emoji: '🖤', color: '#8e44ad', nickname: 'La Jefa Sin Piedad', tagline: 'Te saca del grupo con una sola mirada. Pregúntenle a Pipo.' },
+  { id: 'pipo', name: 'Pipo', emoji: '💪', color: '#1f8a70', nickname: 'El Tesorero Fantasma', tagline: 'Compró el vuelo a 780 y pagó 856. Luego pidió el IBAN a todos.' },
+  { id: 'tania', name: 'Tania', emoji: '🌺', color: '#d81b60', nickname: 'La Voladora de Punta Cana', tagline: 'Aterriza un día después que todos. Paga igual, brilla más.' },
+  { id: 'jhoni', name: 'Jhoni', emoji: '🍸', color: '#f39c12', nickname: 'El Guía Enmascarado', tagline: 'Mejor que una agencia. Cobra en mezcal. Sede en Gstaad.' },
+  { id: 'nicolas', name: 'Nicolas', emoji: '🤟', color: '#2980b9', nickname: 'El Rayo de Porto', tagline: 'Se equivoca de chat, acierta de fiesta. Llega bien depilado.' },
+  { id: 'pablo', name: 'Pablo', emoji: '🎂', color: '#c0392b', nickname: 'El Rey de los Treinta', tagline: 'Treinta años invicto. Bring your booze.', gdlOnly: true },
   { id: 'invitado', name: 'Invitad@ de Pablo', emoji: '🎉', color: '#16a085', nickname: 'La Sorpresa Enmascarada', tagline: 'Nadie sabe quién es. Nadie pregunta. Salud.', gdlOnly: true },
-  { id: 'gracia', name: 'Gracia', emoji: '🇧🇷', color: '#009c3b', nickname: 'Gracinha Sin Freno', tagline: 'Parabéns para ella, cuenta para todos. Llega el 6 y ya no hay quien la pare.', from: '2026-10-06' },
+  { id: 'gracia', name: 'Gracia', emoji: '🇭🇳', color: '#0073cf', nickname: 'Gracinha Sin Freno', tagline: 'Catracha de Berna. Llega el 6 a Vallarta y ya no hay quien la pare.', from: '2026-10-06' },
 ]
 
 /** Los que hacen el viaje entero (3–19 oct): base de promedios, vaquita y "Los 6" */
