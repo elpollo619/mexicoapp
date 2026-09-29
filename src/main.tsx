@@ -17,6 +17,14 @@ const isTyping = () => {
   return !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || (el as HTMLElement).isContentEditable)
 }
 const updateSW = registerSW({
+  // Con la app abierta días seguidos, comprobar cada 15 min si hay versión nueva (solo con red y pestaña visible).
+  // Si la hay, salta onNeedRefresh, que ya respeta a quien está escribiendo.
+  onRegisteredSW(_url, registration) {
+    if (!registration) return
+    setInterval(() => {
+      if (document.visibilityState === 'visible' && navigator.onLine) void registration.update()
+    }, 15 * 60 * 1000)
+  },
   onNeedRefresh() {
     const ask = () => toast('Nueva versión lista · Tocá para actualizar', { sticky: true, action: { label: 'Actualizar', onClick: () => void updateSW(true) } })
     if (document.visibilityState !== 'hidden') return ask()

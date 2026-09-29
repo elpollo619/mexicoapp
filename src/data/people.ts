@@ -29,6 +29,9 @@ export const PEOPLE: Person[] = [
 export const CORE = PEOPLE.filter((p) => !p.gdlOnly && !p.from).map((p) => p.id)
 export const ALL = PEOPLE.map((p) => p.id)
 
+/** Pueden borrar cualquier gasto, foto o encuesta (control de interfaz, igual que el de autor) */
+export const ADMINS = ['cristian']
+
 export const TRIP_FROM = '2026-10-03'
 export const TRIP_TO = '2026-10-19'
 

@@ -7,6 +7,7 @@ import { CORE } from './data/people'
 import { Avatar } from './components/ui'
 import WhoAmI from './sections/WhoAmI'
 import ProfileSheet from './components/ProfileSheet'
+import Onboarding, { ONBOARD_FLAG, ONBOARD_KEY } from './components/Onboarding'
 import ErrorBoundary from './components/ErrorBoundary'
 import Home from './sections/Home'
 import Itinerary, { TRIP_VIEWS } from './sections/Itinerary'
@@ -69,6 +70,14 @@ export default function App() {
   const me = useMe()
   const [[tab, sub], setRoute] = useState(readHash)
   const [profile, setProfile] = useState(false)
+  const [onboard, setOnboard] = useState(false)
+  const maybeOnboard = () => {
+    try {
+      if (sessionStorage.getItem(ONBOARD_FLAG) === '1' && !localStorage.getItem(ONBOARD_KEY)) setOnboard(true)
+    } catch {
+      /* ignore */
+    }
+  }
   const [scrolled, setScrolled] = useState(false)
   const { status, pending } = useSyncStatus()
   const polls = useItems<PollData>('poll')
@@ -103,7 +112,13 @@ export default function App() {
 
   if (!me) return (
     <>
-      <WhoAmI onDone={() => go('hoy')} />
+      <WhoAmI
+        onDone={() => {
+          go('hoy')
+          // Un instante después: que el toque que creó el PIN no caiga sobre la hoja de bienvenida
+          setTimeout(maybeOnboard, 250)
+        }}
+      />
       <Toaster />
     </>
   )
@@ -157,7 +172,8 @@ export default function App() {
           ))}
         </div>
       </nav>
-      <ProfileSheet me={me} open={profile} onClose={() => setProfile(false)} />
+      <ProfileSheet me={me} open={profile} onClose={() => setProfile(false)} onOnboarding={() => { setProfile(false); setTimeout(() => setOnboard(true), 250) }} />
+      <Onboarding open={onboard} onClose={() => setOnboard(false)} />
       <Toaster />
     </div>
   )

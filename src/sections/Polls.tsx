@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Check, ExternalLink, Lock, LockOpen, Plus, Trash2, Trophy, X } from 'lucide-react'
 import { presentIn } from '../data/people'
 import { put, remove, uid, useItems, type Item } from '../lib/store'
-import { useMe } from '../lib/me'
+import { isAdmin, useMe } from '../lib/me'
 import { Avatars, buzz, name, Sheet } from '../components/ui'
 import './polls/polls.css'
 
@@ -73,7 +73,7 @@ function PollCard({ poll, votes, me }: { poll: Item<Poll>; votes: Item<Vote>[]; 
   const voters = new Set(votes.map((v) => v.data.person))
   const expected = presentIn(p.city)
   const missing = expected.filter((x) => !voters.has(x))
-  const canManage = !p.by || p.by === me
+  const canManage = !p.by || p.by === me || isAdmin(me)
 
   function vote(opt: string) {
     if (p.closed) return
