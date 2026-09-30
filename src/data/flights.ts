@@ -48,7 +48,7 @@ export const FLIGHTS: Flight[] = [
     numbers: '—',
     who: ['cristian', 'bia'],
     status: 'pendiente',
-    notes: 'Llegan el 3 al "otro aeropuerto". Editen la hora aquí cuando la tengan. AIFA → Condesa ~1–1½ h.',
+    notes: 'Bia y Cris ya están en México y se juntan con el grupo el 3. Salen a las 17:50 (boleto flexible: pueden adelantar la salida o cambiar de aeropuerto) y llegan al "otro aeropuerto". Editen aquí el origen y la hora de llegada. AIFA → Condesa ~1–1½ h.',
   },
   {
     id: 'f-tania-in',
@@ -95,6 +95,7 @@ export const FLIGHTS: Flight[] = [
     who: CORE6,
     status: 'comprado',
     bags: 'Por persona: 1 personal + 1 de mano (15 kg) + 25 kg facturado.',
+    price: 'CHF 724,50 (6 personas)',
     bookedBy: 'pipo',
     notes: '⚠️ Lunes 12 = Romería de Zapopan: cierran calles desde la noche del domingo. Salir con mucho tiempo. La Paz va 1 h menos que Guadalajara.',
   },

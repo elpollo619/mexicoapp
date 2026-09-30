@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { Plus, X } from 'lucide-react'
-import { CORE, person } from '../../data/people'
+import { TRAVELERS, person } from '../../data/people'
 import { buzz } from '../../components/ui'
 import { FIESTA, sober, type FiestaCard } from './drinks'
 import { shuffle, SoberToggle } from './util'
@@ -28,7 +28,7 @@ const KIND_CLASS: Record<Shown['kind'], string> = {
 const fill = (text: string, a: string, b: string) => text.replaceAll('{A}', a).replaceAll('{B}', b)
 
 export default function Fiesta() {
-  const [names, setNames] = useState<string[]>(() => CORE.map((id) => person(id).name))
+  const [names, setNames] = useState<string[]>(() => TRAVELERS.map((id) => person(id).name))
   const [newName, setNewName] = useState('')
   const [playing, setPlaying] = useState(false)
   const [noAlc, setNoAlc] = useState(false)

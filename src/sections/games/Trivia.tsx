@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { CORE, person } from '../../data/people'
+import { TRAVELERS, person } from '../../data/people'
 import { Avatar, buzz, PeoplePicker } from '../../components/ui'
 import { useMe } from '../../lib/me'
 import { TRIVIA, type TriviaQ } from './content'
@@ -9,7 +9,7 @@ type Game = { players: string[]; qs: TriviaQ[]; turn: number; scores: Record<str
 
 export default function Trivia() {
   const me = useMe()
-  const [players, setPlayers] = useState<string[]>(me ? [me] : CORE)
+  const [players, setPlayers] = useState<string[]>(me ? [me] : TRAVELERS)
   const [rounds, setRounds] = useState(5)
   const [game, setGame] = useState<Game | null>(null)
 

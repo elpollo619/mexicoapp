@@ -174,7 +174,7 @@ export const DAYS: Day[] = [
       { id: 'd08-van', time: '08:30', type: 'move', title: 'Minivan Vallarta → Guadalajara (~4 h)', price: '~66 CHF/pers (estimación)', desc: 'Autopista 15D, peajes MX$1.440–1.630 en efectivo. Si nadie maneja: van con chofer ~67 CHF o bus ETN ~37 CHF.', links: [{ label: 'Kayak vans', url: 'https://www.kayak.com/Puerto-Vallarta-Van-Rentals.14318.cva.ksp' }, { label: 'Daytrip (chofer)', url: 'https://daytrip.com/transfers/puerto-vallarta-mx/guadalajara-mx-mx' }, { label: 'ETN', url: 'https://etn.com.mx/ejecutivos/puerto-vallarta-a-guadalajara.php' }] },
       { id: 'd08-tequila', time: '12:00', type: 'plan', title: 'Parada en Tequila: La Rojeña (José Cuervo)', price: 'MX$345–585 (~16–28 CHF)', desc: '12:00–14:30. El que maneja no cata 😇', maps: maps('La Rojeña, Tequila, Jalisco'), signup: true },
       { id: 'd08-check', time: '16:00', type: 'stay', title: 'Check-in en Guadalajara', desc: 'Devolver la van al llegar.' },
-      { id: 'd08-cena', time: 'Noche', type: 'party', title: '🎂 Cena de cumple de Pablo (mesa para 8)', desc: 'Alcalde (1 Michelin, ~143 CHF), La Tequila (~15–24 CHF) o Hueso (~57 CHF). ¡Votar!', links: [{ label: 'Alcalde', url: 'https://www.opentable.com/r/alcalde-guadalajara' }, { label: 'La Tequila', url: 'https://www.opentable.com/r/la-tequila-avenida-mexico-guadalajara' }, { label: 'Hueso', url: 'https://www.opentable.com/r/hueso-guadalajara' }], signup: true },
+      { id: 'd08-cena', time: 'Noche', type: 'party', title: '🎂 Cena de cumple de Pablo (mesa para 8)', desc: 'Alcalde (1 Michelin, ~143 CHF), La Tequila (~15–24 CHF) o Hueso (~57 CHF). ¡Votar! Pablo pide confirmar que vienen los 8 hasta el miércoles 7 oct.', links: [{ label: 'Alcalde', url: 'https://www.opentable.com/r/alcalde-guadalajara' }, { label: 'La Tequila', url: 'https://www.opentable.com/r/la-tequila-avenida-mexico-guadalajara' }, { label: 'Hueso', url: 'https://www.opentable.com/r/hueso-guadalajara' }], signup: true },
     ],
   },
   {
@@ -203,7 +203,7 @@ export const DAYS: Day[] = [
     city: 'gdl',
     title: 'Día de tequila 🥃',
     items: [
-      { id: 'd11-tour', time: '08:30', type: 'plan', title: 'Tour Tequila + Amatitán', price: '38 CHF (MX$790)', desc: '9,5 h: destilería artesanal, campos de agave, Cantaritos El Güero, +9 catas. Sale de La Minerva.', links: [viator('Viator', 'https://www.viator.com/es-ES/tours/Guadalajara/Full-Day-Guided-Tour-in-Amatitan-and-Tequila-with-Tasting/d5299-327370P1'), viator('Con fiesta en Cantaritos', 'https://www.viator.com/es-ES/tours/Guadalajara/Full-Day-Tequila-Tour-with-Tasting-in-Cantaritos/d5299-415326P2')], maps: maps('Glorieta La Minerva, Guadalajara'), signup: true },
+      { id: 'd11-tour', time: '08:30', type: 'plan', title: 'Tour Tequila + Amatitán', price: '38 CHF (MX$790)', desc: '9,5 h: destilería artesanal, campos de agave, Cantaritos El Güero, +9 catas. Sale de La Minerva. El Tequila Express premium plus (MX$3.500) lo descartaron por caro. Idea de Pipo: dormir en Tequila para no volver borrachos a casa.', links: [viator('Viator', 'https://www.viator.com/es-ES/tours/Guadalajara/Full-Day-Guided-Tour-in-Amatitan-and-Tequila-with-Tasting/d5299-327370P1'), viator('Con fiesta en Cantaritos', 'https://www.viator.com/es-ES/tours/Guadalajara/Full-Day-Tequila-Tour-with-Tasting-in-Cantaritos/d5299-415326P2')], maps: maps('Glorieta La Minerva, Guadalajara'), signup: true },
       { id: 'd11-chill', type: 'free', title: 'o día tranqui: Centro, birria y siesta', desc: 'Birriería Las 9 Esquinas (Michelin) o Karne Garibaldi.', maps: maps('Birriería las 9 Esquinas, Guadalajara') },
       { id: 'd11-romeria', time: 'Noche', type: 'move', title: '⚠️ Empiezan cierres por la Romería de Zapopan', desc: 'Dejar maletas listas para el vuelo del lunes.' },
     ],
@@ -332,23 +332,28 @@ export const FOOD: Record<Exclude<CityId, 'zrh' | 'home'>, Place[]> = {
   ],
 }
 
-export type Stay = { name: string; area: string; perNight: string; total?: string; desc: string; url: string; pick?: boolean }
+export type Stay = { name: string; area: string; perNight: string; total?: string; desc: string; url: string; pick?: boolean; /** Ya reservado: quién y cuándo */ booked?: string; /** Dirección exacta (sale en la tarjeta del taxista) */ address?: string }
 
 export const STAYS: Record<Exclude<CityId, 'zrh' | 'home'>, Stay[]> = {
   cdmx: [
-    { name: 'Airbnb de Jhoni', area: 'Condesa', perNight: '34 CHF/pers', total: '615 CHF (3 noches)', desc: '3 hab. · 2 baños · piscina en la azotea · billar', url: 'https://www.airbnb.ch/rooms/1759074283803085974?check_in=2026-10-03&check_out=2026-10-06&adults=6', pick: true },
+    { name: 'Airbnb de Jhoni · MyCasa', area: 'Condesa', perNight: '≈25 CHF/pers', total: '609,85 CHF (3 noches, 8 pers.)', desc: '3 hab. · 2 baños · piscina en la azotea · billar', url: 'https://www.airbnb.ch/rooms/1759074283803085974?check_in=2026-10-03&check_out=2026-10-06&adults=8', pick: true, booked: 'Reservado y pagado por Pipo · 3–6 oct · 8 huéspedes' },
     { name: 'Depa con alberca', area: 'Condesa (Insurgentes)', perNight: '33 CHF/pers', total: '592 CHF', desc: '3 hab. · piscina en la azotea · gimnasio', url: 'https://www.booking.com/hotel/mx/depto-con-alberca-zona-condesa.html?checkin=2026-10-03&checkout=2026-10-06&group_adults=6&selected_currency=CHF' },
     { name: 'Kukun Edition El Ángel', area: 'Reforma', perNight: '48 CHF/pers', total: '868 CHF', desc: 'Hotel 5★ 9,6 · 3 habitaciones', url: 'https://www.booking.com/hotel/mx/kukun-edition-el-angel.html?checkin=2026-10-03&checkout=2026-10-06&no_rooms=3&group_adults=6&selected_currency=CHF' },
   ],
   pvr: [
-    { name: 'Avalon 907', area: 'Amapas (Zona Romántica)', perNight: '56 CHF/pers', total: '672 CHF (2 noches)', desc: '3 hab. · piscina privada + jacuzzi · vista', url: 'https://www.booking.com/hotel/mx/avalon-907-modern-spacious-9th-f-private-pool.html?checkin=2026-10-06&checkout=2026-10-08&group_adults=6&selected_currency=CHF', pick: true },
+    { name: 'Condominio Oceano Oro', area: 'Zona Romántica · cerca del Malecón y el centro', perNight: '≈27 CHF/pers', total: '371 CHF con impuestos (2 noches, 7 pers.)', desc: '2 apartamentos · pagados MX$8.009,49 el 30 sep · ≈53 CHF por persona.', url: 'https://www.booking.com/Share-iZaoUk8', pick: true, booked: 'Reservado por Pipo (30 sep) · 6–8 oct', address: '509 Morelos, Puerto Vallarta 48300' },
+    { name: 'Avalon 907', area: 'Amapas (Zona Romántica)', perNight: '56 CHF/pers', total: '672 CHF (2 noches)', desc: '3 hab. · piscina privada + jacuzzi · vista', url: 'https://www.booking.com/hotel/mx/avalon-907-modern-spacious-9th-f-private-pool.html?checkin=2026-10-06&checkout=2026-10-08&group_adults=6&selected_currency=CHF' },
     { name: 'Hotel Patio Azul', area: 'Conchas Chinas', perNight: '35 CHF/pers', total: '416 CHF', desc: 'Boutique 9,3 · piscina, jacuzzi y spa · 3 hab.', url: 'https://www.booking.com/hotel/mx/hotelito-patio-azul.html?checkin=2026-10-06&checkout=2026-10-08&no_rooms=3&group_adults=6&selected_currency=CHF' },
     { name: 'Penthouse torre Península (el del cine)', area: 'Zona Hotelera', perNight: '?', desc: '5 hab. · cine privado · piscina frente al mar', url: 'https://www.airbnb.ch/rooms/1751934497596680246?check_in=2026-10-06&check_out=2026-10-08&adults=6' },
+    { name: 'Penthouse Terra PH23 (Nuevo Vallarta)', area: 'Nuevo Vallarta · en la playa · a 2 km del centro', perNight: '≈38 CHF/pers', total: '530 CHF con impuestos (2 noches, 7 pers.)', desc: '4 hab. · 4 baños · 300 m² · piscina · 9,2 en Booking. Lo encontró Bia.', url: 'https://www.booking.com/Share-SVaa63U' },
+    { name: 'Penthouse Panoramic Oceanview (jacuzzi privado)', area: 'Puerto Vallarta', perNight: '?', desc: '4 hab. · vista al mar · jacuzzi privado. Lo mandó Bia.', url: 'https://www.booking.com/Share-SWYMehI' },
+    { name: 'Zoho Skies by Monyxbnb', area: 'Puerto Vallarta', perNight: '≈24 CHF/pers', total: '330 CHF con impuestos (2 apartamentos, 2 noches)', desc: '2 apartamentos de 2 hab. · piscina con vista al mar. Solo quedaba 1 de cada tipo.', url: 'https://www.booking.com/Share-zA7nlo' },
   ],
   gdl: [
     { name: 'Hospedarte Central (4 dobles)', area: 'Av. de la Paz', perNight: '19 CHF/pers', total: '608 CHF (4 noches, 8 pers.)', desc: '9,4 · elegir 4 "Deluxe Double". ⚠️ El vuelo es el 12: reservar 4 noches (8–12 oct).', url: 'https://www.booking.com/hotel/mx/hospedarte-central.html?checkin=2026-10-08&checkout=2026-10-12&no_rooms=4&group_adults=8&selected_currency=CHF', pick: true },
     { name: 'Ramé Hotel Boutique', area: 'Chapultepec', perNight: '39 CHF/pers', total: '938 CHF', desc: '5★ · piscina, spa y sauna', url: 'https://www.booking.com/hotel/mx/boutique-rame.html?checkin=2026-10-08&checkout=2026-10-12&no_rooms=4&group_adults=8&selected_currency=CHF' },
-    { name: 'Depas de Flor (contacto de Pablo)', area: 'Airbnb', perNight: 'preguntar', desc: '2 depas de 2 hab. · piscina. Escribir de parte de la familia Morales/Covantes.', url: 'https://www.airbnb.ch/rooms/735447915679774242' },
+    { name: 'Cas-toldi Hospitality', area: 'Guadalajara', perNight: '?', desc: 'Solo tiene 3 cuartos. Lo mandó Pipo el 28 sep.', url: 'https://www.booking.com/Share-qd7gAb' },
+    { name: 'Depas de Flor (contacto de Pablo)', area: 'Airbnb', perNight: 'preguntar', desc: '2 depas de 2 hab. · piscina. Pablo: “el de las 3 B” y “está bbb el lugar”. Escribir de parte de la familia Morales/Covantes; el teléfono se guarda con ✏️ en Hoy.', url: 'https://www.airbnb.ch/rooms/735447915679774242' },
   ],
   baja: [
     { name: 'Casa de 3 recámaras en La Paz (Airbnb)', area: 'La Paz · cerca del Malecón', perNight: '~25–45 CHF/pers', desc: '12–15 oct · 3 noches', url: 'https://www.airbnb.com/s/La-Paz--Baja-California-Sur--Mexico/homes?checkin=2026-10-12&checkout=2026-10-15&adults=6&min_bedrooms=3', pick: true },

@@ -13,8 +13,9 @@ import KingsCup from './games/KingsCup'
 import MasProbable from './games/MasProbable'
 import ShotWheel from './games/ShotWheel'
 import Fiesta from './games/Fiesta'
+import Charadas from './games/Charadas'
 
-type GameId = 'wheel' | 'finger' | 'loteria' | 'nunca' | 'verdad' | 'trivia' | 'bingo' | 'coin' | 'kings' | 'probable' | 'shots' | 'fiesta'
+type GameId = 'wheel' | 'finger' | 'loteria' | 'nunca' | 'verdad' | 'trivia' | 'bingo' | 'coin' | 'kings' | 'probable' | 'shots' | 'fiesta' | 'charadas'
 
 type Game = { id: GameId; emoji: string; title: string; desc: string; accent: string; drink?: boolean; render: () => ReactNode }
 
@@ -26,6 +27,7 @@ const GAMES: Game[] = [
   { id: 'nunca', emoji: '🥃', title: 'Yo nunca nunca', desc: 'Suave o picante, tú decides', accent: '#d7263d', render: () => <YoNunca /> },
   { id: 'verdad', emoji: '🙊', title: 'Verdad o reto', desc: 'Edición México lindo', accent: '#2563eb', render: () => <VerdadReto /> },
   { id: 'trivia', emoji: '🧠', title: 'Trivia México', desc: '¿Quién sabe más de México?', accent: '#1f8a4c', render: () => <Trivia /> },
+  { id: 'charadas', emoji: '🎬', title: 'Charadas', desc: 'Actúa la palabra sin decirla', accent: '#0e8f9c', render: () => <Charadas /> },
   { id: 'coin', emoji: '🪙', title: 'Moneda y dados', desc: 'Águila o sol, dados y números', accent: '#b8860b', render: () => <CoinDice /> },
   { id: 'fiesta', emoji: '🎉', title: 'Fiesta', desc: 'Cartas con retos, votos y virus', accent: '#15803d', drink: true, render: () => <Fiesta /> },
   { id: 'kings', emoji: '👑', title: 'Círculo de la muerte', desc: 'Kings Cup: 52 cartas y la copa', accent: '#c8322f', drink: true, render: () => <KingsCup /> },

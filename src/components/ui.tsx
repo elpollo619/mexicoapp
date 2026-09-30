@@ -1,5 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react'
-import { person, PEOPLE } from '../data/people'
+import { ALL, person } from '../data/people'
 import { avatarSrc } from '../data/avatars'
 import Luchador from './Luchador'
 
@@ -41,7 +41,7 @@ export function PeoplePicker({
   value,
   onChange,
   multi,
-  ids = PEOPLE.map((p) => p.id),
+  ids = ALL,
 }: {
   value: string[]
   onChange: (v: string[]) => void
