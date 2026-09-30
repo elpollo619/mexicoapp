@@ -214,14 +214,16 @@ function Food({ city }: { city: Exclude<CityId, 'zrh' | 'home'> }) {
 function Stays({ city }: { city: Exclude<CityId, 'zrh' | 'home'> }) {
   return (
     <>
-      <span className="small muted">Una habitación por pareja. Precios de la guía (24 sep). ¡Voten en "Votar"!</span>
+      <span className="small muted">Lo marcado ✓ ya está reservado. El resto son opciones con precios de la guía (24 sep). ¡Voten en "Votar"!</span>
       {STAYS[city].map((s) => (
         <a key={s.name} href={s.url} target="_blank" rel="noreferrer" className="card col" style={{ gap: 4, color: 'inherit' }}>
           <div className="row between" style={{ alignItems: 'flex-start' }}>
             <b className="grow">{s.name}</b>
-            {s.pick && <span className="tag ok">Propuesta</span>}
+            {s.booked ? <span className="tag ok">✓ Reservado</span> : s.pick && <span className="tag ok">Propuesta</span>}
           </div>
           <span className="tiny muted">{s.area}</span>
+          {s.booked && <span className="small" style={{ fontWeight: 700 }}>{s.booked}</span>}
+          {s.address && <span className="small">📍 {s.address}</span>}
           <span className="small">{s.desc}</span>
           <div className="row between">
             <span style={{ fontWeight: 800, color: 'var(--rosa)' }}>{s.perNight}</span>

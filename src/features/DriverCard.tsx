@@ -39,7 +39,7 @@ export function DriverCardButton() {
   const picks = STAYS[s.city].filter((x) => x.pick)
   const pick = s.pickIndex >= 0 ? picks[s.pickIndex] ?? picks[0] : undefined
   const stayName = override?.name || pick?.name || 'Por definir'
-  const address = override?.address || ''
+  const address = override?.address || pick?.address || ''
   const mapsUrl = maps(address ? `${address}, ${CITIES[s.city].name}` : `${stayName}, ${CITIES[s.city].name}`)
 
   return (
@@ -82,7 +82,7 @@ export function DriverCardButton() {
       <Sheet open={edit} onClose={() => setEdit(false)} title="Alojamiento de esta noche">
         {edit && (
           <StayForm
-            initial={{ name: override?.name ?? pick?.name ?? '', address: override?.address ?? '', phone: override?.phone ?? '' }}
+            initial={{ name: override?.name ?? pick?.name ?? '', address: override?.address ?? pick?.address ?? '', phone: override?.phone ?? '' }}
             onSave={(v) => {
               put('note', `stay:${s.slot}`, { ...v, by: me })
               toast('Dirección guardada para todos ✓')
