@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { ALL, CORE, person } from '../../data/people'
+import { ALL, TRAVELERS, person } from '../../data/people'
 import { Avatar, buzz } from '../../components/ui'
 import { RETOS, VERDADES } from './content'
 
@@ -25,7 +25,7 @@ export default function VerdadReto() {
   const [spinning, setSpinning] = useState(false)
   const drawVerdad = useDeck(VERDADES)
   const drawReto = useDeck(RETOS)
-  const players = withGdl ? ALL : CORE
+  const players = withGdl ? ALL : TRAVELERS
 
   const choose = () => {
     setCard(null)

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Shuffle } from 'lucide-react'
-import { CORE, person } from '../../data/people'
+import { TRAVELERS, person } from '../../data/people'
 import { Avatar, buzz } from '../../components/ui'
 import { MAS_PROBABLE } from './drinks'
 import { Confetti, shuffle, SoberToggle } from './util'
@@ -49,7 +49,7 @@ export default function MasProbable() {
           <span className="small muted">{total} votos</span>
         </div>
         <div className="grid3">
-          {CORE.map((id) => (
+          {TRAVELERS.map((id) => (
             <button
               key={id}
               className="card tight col"

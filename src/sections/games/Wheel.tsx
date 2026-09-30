@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import { CORE, person } from '../../data/people'
+import { TRAVELERS, person } from '../../data/people'
 import { buzz, PeoplePicker } from '../../components/ui'
 import { Confetti } from './util'
+import { put, useItems } from '../../lib/store'
 
 type Mode = 'uno' | 'elim'
 
@@ -98,7 +99,7 @@ export function WheelSvg({ slices, rot, onEnd, onClick, hub }: { slices: Slice[]
 }
 
 export default function Wheel() {
-  const [players, setPlayers] = useState<string[]>(CORE)
+  const [players, setPlayers] = useState<string[]>(TRAVELERS)
   const [mode, setMode] = useState<Mode>('uno')
   const [out, setOut] = useState<string[]>([])
   const [rot, setRot] = useState(0)
@@ -106,6 +107,12 @@ export default function Wheel() {
   const [last, setLast] = useState<string | null>(null)
   const [loser, setLoser] = useState<string | null>(null)
   const pending = useRef<string | null>(null)
+  // Registro compartido de quién ha pagado (se guarda una vez por giro decisivo)
+  const history = useItems<{ who: string }>('note').filter((n) => n.id.startsWith('paga:'))
+  const paid = new Map<string, number>()
+  for (const h of history) paid.set(h.data.who, (paid.get(h.data.who) ?? 0) + 1)
+  const ranking = [...paid.entries()].sort((a, b) => b[1] - a[1])
+  const record = (who: string) => put('note', `paga:${Date.now()}`, { who, at: new Date().toISOString() })
 
   const alive = players.filter((p) => !out.includes(p))
   const n = alive.length
@@ -135,6 +142,7 @@ export default function Wheel() {
     buzz([60, 40, 120])
     if (mode === 'uno') {
       setLoser(who)
+      record(who)
       return
     }
     // Eliminación: el que sale se salva; el último que quede paga
@@ -144,6 +152,7 @@ export default function Wheel() {
     const rest = players.filter((p) => !nextOut.includes(p))
     if (rest.length === 1) {
       setLoser(rest[0])
+      record(rest[0])
       setOut(nextOut)
     }
   }
@@ -192,6 +201,20 @@ export default function Wheel() {
           <span className="muted">Salvados:</span>
           {out.map((id) => (
             <span key={id} className="chip g-out">{person(id).emoji} {person(id).name}</span>
+          ))}
+        </div>
+      )}
+
+      {ranking.length > 0 && (
+        <div className="card col">
+          <b className="small">🏆 Salón de la cartera</b>
+          <span className="tiny muted">Quién ha pagado más veces con la ruleta</span>
+          {ranking.slice(0, 5).map(([id, n], k) => (
+            <div key={id} className="row small">
+              <span style={{ width: 22 }}>{k === 0 ? '🥇' : k === 1 ? '🥈' : k === 2 ? '🥉' : ''}</span>
+              <span className="grow">{person(id).emoji} {person(id).name}</span>
+              <b>{n} {n === 1 ? 'vez' : 'veces'}</b>
+            </div>
           ))}
         </div>
       )}

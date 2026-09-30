@@ -30,6 +30,8 @@ export const PEOPLE: Person[] = [
 
 export const CORE = PEOPLE.filter((p) => !p.gdlOnly && !p.extra).map((p) => p.id)
 export const ALL = PEOPLE.filter((p) => !p.tentative).map((p) => p.id)
+/** Quienes viajan con el grupo (los 6 de base + extras confirmados); sin los que solo van a Guadalajara */
+export const TRAVELERS = PEOPLE.filter((p) => !p.gdlOnly && !p.tentative).map((p) => p.id)
 
 export const person = (id: string): Person =>
   PEOPLE.find((p) => p.id === id) ?? { id, name: id, emoji: '🙂', color: '#777', nickname: 'El Misterioso', tagline: '' }

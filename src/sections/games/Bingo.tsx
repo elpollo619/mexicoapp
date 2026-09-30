@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { PEOPLE, person } from '../../data/people'
+import { ALL, PEOPLE, person } from '../../data/people'
 import { Avatar, buzz } from '../../components/ui'
 import { useMe } from '../../lib/me'
 import { put, remove, useItems } from '../../lib/store'
@@ -21,7 +21,7 @@ function score(cells: Set<number>) {
 }
 
 export default function Bingo() {
-  const me = useMe() ?? PEOPLE[0].id
+  const me = useMe() ?? ALL[0]
   const [view, setView] = useState(me)
   const [party, setParty] = useState(false)
   const marks = useItems<Mark>('bingo')
