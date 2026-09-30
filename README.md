@@ -2,6 +2,8 @@
 
 **Abrir:** https://elpollo619.github.io/mexicoapp/
 
+**Guía en PDF para mandar al grupo:** [docs/Guia_Mexico_Lindo_App.pdf](docs/Guia_Mexico_Lindo_App.pdf) (instalar, entrar, qué hay en la app y reservas al 30 sep).
+
 ## Cómo instalarla en el celular
 - **iPhone (Safari):** abrir el link → botón Compartir → **Añadir a pantalla de inicio**.
 - **Android (Chrome):** abrir el link → menú ⋮ → **Instalar app**.
