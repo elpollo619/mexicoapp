@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { LocateFixed, MapPin, Navigation, Radio, X } from 'lucide-react'
+import { LocateFixed, MapPin, MessageCircle, Navigation, Radio, X } from 'lucide-react'
 import { PEOPLE } from '../../data/people'
 import { useMe } from '../../lib/me'
 import { toast } from '../../lib/toast'
 import { Avatar, buzz } from '../../components/ui'
-import { ago, directions, distLabel, isLive, shareOnce, startLive, stopLive, stopSharing, useLive, useWhere, type Where } from './where'
+import { ago, directions, distLabel, isLive, shareOnce, startLive, stopLive, stopSharing, useLive, useWhere, whatsappUrl, type Where } from './where'
 import type { Go } from '../../App'
 
 const FAIL: Record<string, string> = {
@@ -87,6 +87,11 @@ export default function WhereCard({ now, go }: { now: number; go: Go }) {
               <Radio size={15} /> 30 min en vivo
             </button>
           </>
+        )}
+        {mine && (
+          <a className="btn ghost small" href={whatsappUrl(mine)} target="_blank" rel="noreferrer" aria-label="Mandar mi ubicación por WhatsApp">
+            <MessageCircle size={15} /> Mandar por WhatsApp
+          </a>
         )}
         {mine && !isLive() && (
           <button className="btn ghost small" onClick={() => { stopSharing(me); toast('Ya no se ve tu ubicación') }} aria-label="Dejar de compartir">

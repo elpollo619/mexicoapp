@@ -114,7 +114,7 @@ export function ExpenseDetail({ item, onEdit, onClose }: { item: Item<Expense>; 
       {e.by && <div className="tiny muted">Subido por {name(e.by)}</div>}
       {confirm ? (
         <div className="confirm-row">
-          <span className="grow small">¿Borrar este gasto?</span>
+          <span className="grow small">{`¿Borrar el gasto de ${name(e.payer)}?`}</span>
           <button className="btn ghost small" onClick={() => setConfirm(false)}>
             No
           </button>

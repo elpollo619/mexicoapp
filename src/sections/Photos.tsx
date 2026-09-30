@@ -1,11 +1,12 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Camera, Share2, Trash2 } from 'lucide-react'
 import { CITIES, DAYS } from '../data/trip'
-import { useMe } from '../lib/me'
+import { isAdmin, useMe } from '../lib/me'
 import { put, remove, uid, uploadImage, useItems, type Item } from '../lib/store'
 import { toast } from '../lib/toast'
 import { longDate, todayIn } from '../lib/time'
 import { Avatar, name, Sheet } from '../components/ui'
+import { ago } from '../features/where/where'
 
 /** `thumb` (400 px) para la cuadrícula; las fotos viejas solo tienen `url` */
 type Photo = { url: string; thumb?: string; by: string; caption?: string; date: string }
@@ -76,6 +77,15 @@ export default function Photos() {
     toast(`${ok ? `Se subieron ${ok} de ${list.length}. ` : ''}${WHY[reason]}`)
   }
 
+  // Reloj para "hace 5 min" en la tira de últimas subidas
+  const [now, setNow] = useState(Date.now)
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 30_000)
+    return () => clearInterval(t)
+  }, [])
+  /** Las 8 más recientes por fecha de subida, sin importar el día del viaje */
+  const recent = photos.slice(0, 8)
+
   // Agrupar por día del viaje
   const groups = new Map<string, Item<Photo>[]>()
   for (const p of photos) {
@@ -88,12 +98,12 @@ export default function Photos() {
     <>
       <div className="card row" style={{ gap: 12 }}>
         <div className="grow col" style={{ gap: 2 }}>
-          <h3>Álbum del grupo</h3>
+          <h3>Fotos del viaje</h3>
           <span className="small muted">
-            {photos.length} foto{photos.length === 1 ? '' : 's'} · todos las ven al instante
+            {photos.length ? `${photos.length} foto${photos.length === 1 ? '' : 's'} · ` : ''}Súbelas aquí, todos las ven al instante y quedan guardadas en el NAS de Cris.
           </span>
         </div>
-        <button className="btn primary" onClick={() => input.current?.click()} disabled={!!progress} aria-live="polite">
+        <button className="btn primary" style={{ minHeight: 48, padding: '0 18px', fontSize: 16 }} onClick={() => input.current?.click()} disabled={!!progress} aria-live="polite">
           <Camera size={18} /> {progress ? (progress.n > 1 ? `Subiendo ${progress.i} de ${progress.n}…` : 'Subiendo…') : 'Subir'}
         </button>
         <input ref={input} type="file" accept="image/*" multiple hidden onChange={(e) => upload(e.target.files)} />
@@ -103,8 +113,36 @@ export default function Photos() {
         <div className="empty">
           <span className="e-ic">📷</span>
           <b>Todavía no hay fotos</b>
-          <span className="small">Suban las mejores del día: el taco, el atardecer, Pablo bailando…</span>
+          <span className="small">Toca «Subir» y elige una o varias del carrete. Suban las mejores del día: el taco, el atardecer, Pablo bailando…</span>
         </div>
+      )}
+
+      {recent.length > 0 && (
+        <section className="col" style={{ gap: 8 }}>
+          <span className="label">⚡ Últimas subidas</span>
+          <div className="row" style={{ gap: 10, overflowX: 'auto', paddingBottom: 4, scrollSnapType: 'x proximity' }}>
+            {recent.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => setOpen(p)}
+                aria-label={`Foto de ${name(p.data.by)}, ${ago(p.created_at, now)}`}
+                style={{ flex: 'none', width: 108, padding: 0, border: 0, background: 'none', color: 'inherit', textAlign: 'left', scrollSnapAlign: 'start' }}
+              >
+                <img
+                  src={p.data.thumb ?? p.data.url}
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  style={{ width: 108, height: 108, objectFit: 'cover', borderRadius: 14, display: 'block', background: 'var(--chip)' }}
+                />
+                <span className="row" style={{ gap: 6, marginTop: 6, alignItems: 'center' }}>
+                  <Avatar id={p.data.by} size={20} />
+                  <span className="tiny muted ellipsis">{ago(p.created_at, now)}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+        </section>
       )}
 
       {[...groups.entries()].map(([date, list]) => {
@@ -159,7 +197,7 @@ export default function Photos() {
               >
                 {sharing ? <span className="spinner" style={{ width: 18, height: 18, borderWidth: 2 }} aria-hidden /> : <Share2 size={18} />}
               </button>
-              {open.data.by === me &&
+              {(open.data.by === me || isAdmin(me)) &&
                 (confirm ? (
                   <button
                     className="btn small"

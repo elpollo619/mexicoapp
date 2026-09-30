@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Camera, Minus, Plus, RotateCw, X } from 'lucide-react'
-import { ALL, CORE } from '../../data/people'
+import { ALL, presentOn } from '../../data/people'
 import { CATEGORIES, CURRENCIES, fmt, fromCHF, parseAmount, toCHF, type Currency, type Expense } from '../../lib/money'
 import { put, uid, uploadImage } from '../../lib/store'
 import { buzz, name, PeoplePicker } from '../../components/ui'
@@ -41,11 +41,11 @@ const UPLOAD_MSG = {
 
 const sameSet = (a: string[], b: string[]) => a.length === b.length && a.every((x) => b.includes(x))
 
-function initialMode(shares: Record<string, number>): Mode {
+function initialMode(shares: Record<string, number>, date: string): Mode {
   const ids = Object.keys(shares)
   const allOnes = Object.values(shares).every((v) => v === 1)
   if (!allOnes) return 'parts'
-  if (sameSet(ids, CORE)) return 'core'
+  if (sameSet(ids, presentOn(date))) return 'core'
   if (sameSet(ids, ALL)) return 'all'
   return 'custom'
 }
@@ -58,11 +58,11 @@ export default function ExpenseForm({ me, edit, onDone }: { me: string; edit?: {
   const [payer, setPayer] = useState(e?.payer ?? me)
   const [category, setCategory] = useState(e?.category ?? remembered(LAST_CAT, CATEGORIES.map((c) => c.id), 'comida'))
   const [date, setDate] = useState(e?.date ?? today())
-  const [mode, setMode] = useState<Mode>(e ? initialMode(e.shares) : 'core')
-  const [custom, setCustom] = useState<string[]>(e ? Object.keys(e.shares) : CORE)
+  const [mode, setMode] = useState<Mode>(e ? initialMode(e.shares, e.date) : 'core')
+  const [custom, setCustom] = useState<string[]>(e ? Object.keys(e.shares) : presentOn(date))
   const [parts, setParts] = useState<Record<string, number>>(() => {
     const base = Object.fromEntries(ALL.map((p) => [p, 0]))
-    return e ? { ...base, ...e.shares } : { ...base, ...Object.fromEntries(CORE.map((p) => [p, 1])) }
+    return e ? { ...base, ...e.shares } : { ...base, ...Object.fromEntries(presentOn(date).map((p) => [p, 1])) }
   })
   const [receipt, setReceipt] = useState<Receipt | undefined>(e?.receipt ? { url: e.receipt, thumb: e.thumb } : undefined)
   const [uploading, setUploading] = useState(false)
@@ -72,15 +72,25 @@ export default function ExpenseForm({ me, edit, onDone }: { me: string; edit?: {
   /** Vista previa local (URL.createObjectURL) mientras sube */
   const [preview, setPreview] = useState<string | null>(null)
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview) }, [preview])
+  /** Modo rápido: solo qué + monto; pagó/categoría/fecha/reparto/ticket plegados. Al editar se abre todo. */
+  const [more, setMore] = useState<boolean>(() => !!e || sessionStorage.getItem('mx-expense-more') === '1')
+  const toggleMore = () => {
+    setMore((v) => {
+      try { sessionStorage.setItem('mx-expense-more', v ? '0' : '1') } catch { /* ignore */ }
+      return !v
+    })
+  }
 
   const amount = parseAmount(amountStr)
   // Android permite "Borrar" la fecha: sin fecha válida no se guarda
   const dateOk = DATE_RE.test(date)
   const valid = title.trim().length > 0 && Number.isFinite(amount) && amount > 0 && dateOk
 
+  // "Los N" = quienes están en el viaje en la fecha del gasto (Gracia desde el 6; Pablo e invitad@ solo en GDL)
+  const present = presentOn(dateOk ? date : today())
   const shares: Record<string, number> =
     mode === 'core'
-      ? Object.fromEntries(CORE.map((p) => [p, 1]))
+      ? Object.fromEntries(present.map((p) => [p, 1]))
       : mode === 'all'
         ? Object.fromEntries(ALL.map((p) => [p, 1]))
         : mode === 'custom'
@@ -141,14 +151,28 @@ export default function ExpenseForm({ me, edit, onDone }: { me: string; edit?: {
     <div className="col" style={{ gap: 14 }}>
       <label className="field">
         ¿Qué fue?
-        <input className="input" value={title} onChange={(ev) => setTitle(ev.target.value)} placeholder="Tacos en Los Cocuyos" maxLength={80} autoFocus={!edit} />
+        <input className="input" value={title} onChange={(ev) => setTitle(ev.target.value)} placeholder="Tacos en Los Cocuyos" maxLength={80} />
       </label>
 
       <div className="row" style={{ gap: 8, alignItems: 'flex-end' }}>
         <label className="field grow">
           Monto
-          <input className="input" value={amountStr} onChange={(ev) => setAmountStr(ev.target.value)} inputMode="decimal" placeholder="0" style={{ fontSize: 22, fontWeight: 800 }} />
+          <input className="input" value={amountStr} onChange={(ev) => setAmountStr(ev.target.value)} inputMode="decimal" placeholder="0" style={{ fontSize: 22, fontWeight: 800 }} autoFocus={!edit} />
         </label>
+        {!more && (
+          <label className="btn ghost file-btn" style={{ minHeight: 46 }} title="Foto del ticket">
+            <Camera size={16} /> {receipt ? 'Ticket ✓' : 'Ticket'}
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={(ev) => {
+                void onFile(ev.target.files?.[0])
+                ev.target.value = ''
+              }}
+            />
+          </label>
+        )}
       </div>
       <div className="seg">
         {CURRENCIES.map((c) => (
@@ -159,6 +183,25 @@ export default function ExpenseForm({ me, edit, onDone }: { me: string; edit?: {
       </div>
       {valid && currency !== 'CHF' && <div className="small muted">≈ {fmt(chf)}</div>}
 
+      {!more && (
+        <button
+          type="button"
+          className="row"
+          onClick={toggleMore}
+          style={{ gap: 8, background: 'var(--chip)', border: 0, borderRadius: 12, padding: '10px 12px', color: 'var(--ink)', textAlign: 'left', minHeight: 44, width: '100%' }}
+        >
+          <span className="grow small">
+            {payer === me ? 'Pagué yo' : `Pagó ${name(payer)}`} · {CATEGORIES.find((c) => c.id === category)?.emoji} {CATEGORIES.find((c) => c.id === category)?.label} ·{' '}
+            {date === today() ? 'hoy' : `${date.slice(8)}.${date.slice(5, 7)}`} · entre{' '}
+            {mode === 'core' ? `los ${present.length}` : mode === 'all' ? 'todos' : mode === 'custom' ? `${custom.length} personas` : 'partes'}
+            {uploading ? ' · subiendo ticket…' : receipt ? ' · con ticket' : ''}
+          </span>
+          <b className="small" style={{ color: 'var(--rosa)', flex: 'none' }}>Cambiar</b>
+        </button>
+      )}
+
+      {more && (
+      <>
       <div className="field">
         Pagó
         <PeoplePicker value={[payer]} onChange={(v) => v[0] && setPayer(v[0])} />
@@ -185,10 +228,10 @@ export default function ExpenseForm({ me, edit, onDone }: { me: string; edit?: {
         Entre quiénes
         <div className="seg">
           <button type="button" className={mode === 'core' ? 'on' : ''} onClick={() => setMode('core')}>
-            Los 6
+            Los {present.length}
           </button>
           <button type="button" className={mode === 'all' ? 'on' : ''} onClick={() => setMode('all')}>
-            + GDL (8)
+            Todos ({ALL.length})
           </button>
           <button type="button" className={mode === 'custom' ? 'on' : ''} onClick={() => setMode('custom')}>
             Elegir
@@ -277,6 +320,14 @@ export default function ExpenseForm({ me, edit, onDone }: { me: string; edit?: {
           </span>
         )}
       </div>
+
+      {!e && (
+        <button type="button" className="btn ghost small" onClick={toggleMore} style={{ alignSelf: 'flex-start' }}>
+          Menos opciones
+        </button>
+      )}
+      </>
+      )}
 
       <div className="row">
         <button type="button" className="btn ghost grow" onClick={onDone}>

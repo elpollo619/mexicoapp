@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react'
+import { ADMINS } from '../data/people'
 
 const KEY = 'mx-session-v2'
 const listeners = new Set<() => void>()
@@ -35,6 +36,9 @@ export function useMe(): string | null {
     () => me,
   )
 }
+
+/** Cristian puede borrar cualquier cosa; los demás solo lo suyo */
+export const isAdmin = (id: string | null) => !!id && ADMINS.includes(id)
 
 export type Profile = { pin: string; updated: string }
 

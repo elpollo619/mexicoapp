@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Lock, RefreshCw, WifiOff } from 'lucide-react'
-import { PEOPLE, person } from '../data/people'
+import { PEOPLE, person, joinLabel } from '../data/people'
 import { hashPin, setMe, useMe, type Profile } from '../lib/me'
+import { ONBOARD_FLAG } from '../components/Onboarding'
 import { put, retry, useItems, useSyncStatus } from '../lib/store'
 import { readInvite } from '../lib/install'
 import { photo } from '../data/photos'
@@ -113,12 +114,8 @@ export default function WhoAmI({ onDone }: { onDone: () => void }) {
                           <>
                             <Lock size={10} /> con PIN
                           </>
-                        ) : p.gdlOnly ? (
-                          'Guadalajara · nuevo'
-                        ) : p.tentative ? (
-                          'Por confirmar'
                         ) : (
-                          'Nuevo'
+                          joinLabel(p)
                         )}
                       </span>
                     </span>
@@ -192,6 +189,7 @@ export default function WhoAmI({ onDone }: { onDone: () => void }) {
                 return
               }
               put('profile', `profile:${step.id}`, { pin: await hashPin(step.id, pin), updated: new Date().toISOString() })
+              try { sessionStorage.setItem(ONBOARD_FLAG, '1') } catch { /* ignore */ }
               setMe(step.id)
               toast('PIN creado · sesión iniciada ✓')
               onDone()

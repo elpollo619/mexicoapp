@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Pencil } from 'lucide-react'
-import { ALL, CORE, person } from '../../data/people'
+import { ALL, CORE, person, tripWindow } from '../../data/people'
 import { balances, CATEGORIES, fmt, fromCHF, KITTY_CATEGORY, kittyAsExpenses, parseAmount, type Expense, type KittyData, type Settlement } from '../../lib/money'
 import { put, useItems } from '../../lib/store'
 import { todayIn, useNow } from '../../lib/time'
@@ -10,7 +10,7 @@ import { Avatar, buzz, name, Sheet } from '../../components/ui'
 /** Presupuesto por persona (sin vuelos): guía del grupo hasta GDL (1.020) + 4.ª noche GDL, Baja y última noche CDMX, aprox. */
 const DEFAULT_BUDGET = 1550
 const GDL_BUDGET = 260
-export const defaultBudget = (p: string) => (person(p).gdlOnly ? GDL_BUDGET : DEFAULT_BUDGET)
+export const defaultBudget = (p: string) => (CORE.includes(p) ? DEFAULT_BUDGET : GDL_BUDGET)
 
 const TRIP_START = '2026-10-03'
 const TRIP_END = '2026-10-18'
@@ -128,11 +128,12 @@ export default function BudgetView({ me }: { me: string }) {
   const pre = counted.filter((e) => e.date < TRIP_START).reduce((a, e) => a + shareFor(e), 0)
   const during = spent - pre
 
-  // Pablo e invitad@ solo están en Guadalajara (8–11 oct): su viaje dura 4 días
-  const gdlOnlyMe = scope === 'yo' && !!person(me).gdlOnly
-  const start = gdlOnlyMe ? '2026-10-08' : TRIP_START
-  const end = gdlOnlyMe ? '2026-10-11' : TRIP_END
-  const tripDays = gdlOnlyMe ? 4 : TRIP_DAYS
+  // Quien no hace el viaje entero (Pablo e invitad@ solo GDL, Gracia desde el 6) tiene su propia ventana
+  const gdlOnlyMe = scope === 'yo' && !CORE.includes(me)
+  const win = tripWindow(person(me))
+  const start = gdlOnlyMe ? win.from : TRIP_START
+  const end = gdlOnlyMe ? win.to : TRIP_END
+  const tripDays = gdlOnlyMe ? Math.round((Date.parse(win.to) - Date.parse(win.from)) / 86400000) + 1 : TRIP_DAYS
 
   // Ritmo (hora de Ciudad de México)
   const today = todayIn('America/Mexico_City', now)
@@ -160,7 +161,6 @@ export default function BudgetView({ me }: { me: string }) {
       : projection <= budget * 1.05
         ? { text: 'Ojo, vamos rápido 🔥', cls: 'cempa' }
         : { text: 'Nos pasamos 😬', cls: 'rosa' }
-  const fullTrip = ALL.filter((p) => !person(p).gdlOnly).length
   const byStop = STOPS.map((s) => ({
     key: s.id,
     label: `${s.emoji} ${s.label}`,
@@ -171,7 +171,7 @@ export default function BudgetView({ me }: { me: string }) {
         : 0
       : scope === 'yo'
         ? s.plan
-        : s.plan * fullTrip + (s.id === 'gdl' ? GDL_BUDGET * (ALL.length - fullTrip) : 0),
+        : s.plan * CORE.length + (s.id === 'gdl' ? GDL_BUDGET * (ALL.length - CORE.length) : 0),
   })).filter((r) => r.spent > 0 || r.plan > 0)
 
   // El plan por categoría se escala al presupuesto real (1.550 = plan completo)

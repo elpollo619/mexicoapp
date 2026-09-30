@@ -1,6 +1,5 @@
 import Polls from './Polls'
 import Games from './Games'
-import Photos from './Photos'
 import LuchadorGallery from '../components/LuchadorGallery'
 
 import type { GroupView } from './views'
@@ -14,7 +13,6 @@ export default function Group({ view, onView: setView }: { view: GroupView; onVi
           [
             ['votar', 'Votar'],
             ['juegos', 'Juegos'],
-            ['fotos', 'Fotos'],
             ['cuates', 'Cuates'],
           ] as [GroupView, string][]
         ).map(([v, l]) => (
@@ -33,7 +31,6 @@ export default function Group({ view, onView: setView }: { view: GroupView; onVi
       </div>
       {view === 'votar' && <Polls />}
       {view === 'juegos' && <Games />}
-      {view === 'fotos' && <Photos />}
       {view === 'cuates' && <LuchadorGallery />}
     </>
   )
