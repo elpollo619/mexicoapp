@@ -28,6 +28,8 @@ const LOOKS: Record<string, Look> = {
   jhoni: { skin: '#d59a73', accent: '#1d1720', trim: 'star', mouth: 'tongue', gaze: [-1, 1], emblem: 'martini', extras: ['shades', 'cocktail'] },
   nicolas: { skin: '#eec1a0', accent: '#ffffff', trim: 'bolt', mouth: 'o', gaze: [1.2, -1.2], emblem: 'horns', extras: ['rockhorns', 'shine'] },
   pablo: { skin: '#d8a47f', accent: '#c0392b', trim: 'flame', mouth: 'grin', gaze: [0, 0], emblem: 'thirty', extras: ['partyhat', 'gold', 'confetti'] },
+  gracia: { skin: '#e6b48e', accent: '#ffd23f', trim: 'star', mouth: 'grin', gaze: [1, 0], emblem: 'flower', extras: ['lashes', 'blush', 'shine'] },
+  primo: { skin: '#d9a07a', accent: '#ffffff', trim: 'ring', mouth: 'o', gaze: [-1.5, 1], emblem: 'question', extras: ['shades'] },
   invitado: { skin: '#caa07e', accent: '#ffd23f', trim: 'star', mouth: 'smirk', gaze: [1.5, 1.5], emblem: 'question', extras: ['confetti'] },
 }
 

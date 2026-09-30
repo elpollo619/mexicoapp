@@ -115,6 +115,8 @@ export default function WhoAmI({ onDone }: { onDone: () => void }) {
                           </>
                         ) : p.gdlOnly ? (
                           'Guadalajara · nuevo'
+                        ) : p.tentative ? (
+                          'Por confirmar'
                         ) : (
                           'Nuevo'
                         )}

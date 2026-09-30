@@ -10,7 +10,7 @@ import { Avatar, buzz, name, Sheet } from '../../components/ui'
 /** Presupuesto por persona (sin vuelos): guía del grupo hasta GDL (1.020) + 4.ª noche GDL, Baja y última noche CDMX, aprox. */
 const DEFAULT_BUDGET = 1550
 const GDL_BUDGET = 260
-export const defaultBudget = (p: string) => (CORE.includes(p) ? DEFAULT_BUDGET : GDL_BUDGET)
+export const defaultBudget = (p: string) => (person(p).gdlOnly ? GDL_BUDGET : DEFAULT_BUDGET)
 
 const TRIP_START = '2026-10-03'
 const TRIP_END = '2026-10-18'
@@ -129,7 +129,7 @@ export default function BudgetView({ me }: { me: string }) {
   const during = spent - pre
 
   // Pablo e invitad@ solo están en Guadalajara (8–11 oct): su viaje dura 4 días
-  const gdlOnlyMe = scope === 'yo' && !CORE.includes(me)
+  const gdlOnlyMe = scope === 'yo' && !!person(me).gdlOnly
   const start = gdlOnlyMe ? '2026-10-08' : TRIP_START
   const end = gdlOnlyMe ? '2026-10-11' : TRIP_END
   const tripDays = gdlOnlyMe ? 4 : TRIP_DAYS
@@ -160,6 +160,7 @@ export default function BudgetView({ me }: { me: string }) {
       : projection <= budget * 1.05
         ? { text: 'Ojo, vamos rápido 🔥', cls: 'cempa' }
         : { text: 'Nos pasamos 😬', cls: 'rosa' }
+  const fullTrip = ALL.filter((p) => !person(p).gdlOnly).length
   const byStop = STOPS.map((s) => ({
     key: s.id,
     label: `${s.emoji} ${s.label}`,
@@ -170,7 +171,7 @@ export default function BudgetView({ me }: { me: string }) {
         : 0
       : scope === 'yo'
         ? s.plan
-        : s.plan * CORE.length + (s.id === 'gdl' ? GDL_BUDGET * (ALL.length - CORE.length) : 0),
+        : s.plan * fullTrip + (s.id === 'gdl' ? GDL_BUDGET * (ALL.length - fullTrip) : 0),
   })).filter((r) => r.spent > 0 || r.plan > 0)
 
   // El plan por categoría se escala al presupuesto real (1.550 = plan completo)
