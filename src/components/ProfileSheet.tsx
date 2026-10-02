@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { KeyRound, Link2, LogOut, Smartphone, Sparkles } from 'lucide-react'
+import { Bell, KeyRound, Link2, LogOut, Smartphone, Sparkles } from 'lucide-react'
 import { PEOPLE, person } from '../data/people'
 import { hashPin, isAdmin, setMe, type Profile } from '../lib/me'
 import { put, remove, useItems } from '../lib/store'
@@ -94,6 +94,15 @@ export default function ProfileSheet({ me, open, onClose, onOnboarding }: { me: 
           <button className="btn outline block" style={{ justifyContent: 'flex-start' }} onClick={() => setView({ pin: 'new' })}>
             <KeyRound size={18} /> Cambiar mi PIN
           </button>
+          {typeof Notification !== 'undefined' && Notification.permission !== 'granted' && (
+            <button
+              className="btn outline block"
+              style={{ justifyContent: 'flex-start' }}
+              onClick={() => void Notification.requestPermission().then((r) => toast(r === 'granted' ? 'Listo: te avisamos de gastos nuevos ✓' : 'No se activaron los avisos'))}
+            >
+              <Bell size={18} /> Avisarme de gastos nuevos
+            </button>
+          )}
           {onOnboarding && (
             <button className="btn outline block" style={{ justifyContent: 'flex-start' }} onClick={onOnboarding}>
               <Sparkles size={18} /> Ver la bienvenida de nuevo

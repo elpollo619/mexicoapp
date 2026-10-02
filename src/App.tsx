@@ -3,6 +3,7 @@ import { Camera, Compass, Home as HomeIcon, LifeBuoy, Users, Wallet } from 'luci
 import { useMe } from './lib/me'
 import { useItems, useSyncStatus } from './lib/store'
 import { Toaster } from './lib/toast'
+import ExpenseAlerts from './features/ExpenseAlerts'
 import { CORE } from './data/people'
 import { Avatar } from './components/ui'
 import WhoAmI from './sections/WhoAmI'
@@ -174,6 +175,7 @@ export default function App() {
       </nav>
       <ProfileSheet me={me} open={profile} onClose={() => setProfile(false)} onOnboarding={() => { setProfile(false); setTimeout(() => setOnboard(true), 250) }} />
       <Onboarding open={onboard} onClose={() => setOnboard(false)} />
+      <ExpenseAlerts />
       <Toaster />
     </div>
   )
